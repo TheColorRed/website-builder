@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    meta(http-equiv="X-UA-Compatible", content="ie=edge")
+    title Installer
+    link(rel="stylesheet", href="/css/main.css")
+    link(rel="stylesheet", href="/css/themes/default.css")
+    link(rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css")
+    script(src='/js/main.js')
+    style.
+      body{margin-top: 10px}
+      .input-info{font-size: 0.8rem;line-height: initial;}
+  body
+    form.container(action="/install?one=two&three=four" method="post")
+      //- Website information
+      .well
+        .row.form-group
+          .col-2.text-bold Website title
+          .col-5: input(name='website-title' type='text' value='My Awesome Website' required)
+          .col-5.input-info What do you want to call your website?
+      //- Database Connection Setup
+      .well
+        h2 Mongo Database Connection
+        .row.form-group
+          .col-2.text-bold Hostname
+          .col-5: input(name='db-hostname' type='text' value='localhost' required)
+          .col-5.input-info This is the host you plan on connecting to.
+        .row.form-group
+          .col-2.text-bold Port number
+          .col-5: input(name='db-port-number' type='number' value='27017' required)
+          .col-5.input-info This is the port number that the database is listening on.
+        .row.form-group
+          .col-2.text-bold Database
+          .col-5: input(name='db-database' type='text' required)
+          .col-5.input-info This is the name of the database to use. It will store all the needed information.
+        .row.form-group
+          .col-2.text-bold Username
+          .col-5: input(name='db-username' type='text')
+          .col-5.input-info This is the username that will be used to connect to the database.
+        .row.form-group
+          .col-2.text-bold Password
+          .col-5
+            .row.toggle-password.input-group
+              .col-11
+                input.far(name='db-password' type='password')
+              a(href='').col-1.center.white-darken-3.toggle
+                i.far.fa-eye
+          .col-5.input-info This is the password that the above user will use to connect to the database.
+
+      //- Admin setup
+      .well
+        h2 Admin Setup
+        .row: p.col-12 This will be the primary user which will not be deletable once created. However, this information can be changed later on.
+        .row.form-group
+          .col-2.text-bold Username
+          .col-5: input(name='admin-username' type='text' required)
+          .col-5.input-info This is the username you would like to use to login to the admin area.
+        .row.form-group
+          .col-2.text-bold Password
+          .col-5
+            .row.toggle-password.input-group
+              .col-11
+                input.far(name='admin-password' type='password' pattern="(\\w{3,}(\\s|$)){4,}" required)
+              a(href='').col-1.center.white-darken-3.toggle
+                i.far.fa-eye
+          .col-5.input-info A four word or more password where each word has at least three characters.
+        .row.form-group
+          .col-2.text-bold First name
+          .col-5: input(name='admin-first' type='text' required)
+          .col-5.input-info This is your first name
+        .row.form-group
+          .col-2.text-bold Last name
+          .col-5: input(name='admin-last' type='text' required)
+          .col-5.input-info This is your last name
+        .row.form-group
+          .col-2.text-bold Email
+          .col-5: input(name='admin-email' type='email' required)
+          .col-5.input-info Your email so if you get locked out for some reason.
+
+      //- The footer
+      .well
+        .row
+          .col-1.col-11-offset.text-right
+            input(type="button", value="Install")#install

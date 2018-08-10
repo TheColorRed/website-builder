@@ -1,0 +1,115 @@
+.container {
+  margin: auto;
+  width: $container-width;
+}
+
+.row {
+  display: flex;
+  flex-flow: row wrap;
+  // padding: 0 $grid-padding;
+  // margin: 0 $cell-margin;
+  align-items: stretch;
+  width: 100%;
+
+  &.row-no-wrap {
+    flex-wrap: nowrap;
+  }
+
+  &.row-no-padding {
+    padding: 0;
+  }
+
+  &.cell-no-margin {
+    @for $i from 1 through $grid-columns {
+      & > .col-#{$i} {
+        margin: 0;
+      }
+
+      & > .col-#{$i}-phone {
+        margin: 0;
+      }
+
+      & > .col-#{$i}-tablet {
+        margin: 0;
+      }
+    }
+  }
+
+  .center {
+    align-items: center;
+    align-content: center;
+    justify-items: center;
+    justify-content: center;
+    display: flex;
+  }
+
+  // &:first-child {
+  //   padding-top: $grid-padding;
+  // }
+
+  // &:last-child {
+  //   padding-bottom: $grid-padding;
+  // }
+
+  @media screen and (max-width: $breakpoint-tablet - 1) {
+    padding: 0;
+
+    &:first-child {
+      padding-top: 0;
+    }
+  }
+
+  @for $i from 1 through $grid-columns {
+    // Desktop
+    & > .col-#{$i} {
+      margin-left: $cell-margin;
+      margin-right: $cell-margin;
+      width: calc(#{$i / $grid-columns * 100%} - #{$cell-margin * 2});
+      // width: calc(#{$i / $grid-columns * 100%});
+    }
+
+    & > .col-#{$i}-offset {
+      margin-left: $i / $grid-columns * 100%;
+    }
+  }
+
+  @for $i from 1 through $grid-columns {
+    // Phone
+    @media screen and (max-width: $breakpoint-phone - 1) {
+      & > .col-#{$i}-phone {
+        margin-left: $cell-margin;
+        margin-right: $cell-margin;
+        width: calc(#{$i / $grid-columns * 100%} - #{$cell-margin * 2});
+      }
+
+      & > .col-#{$i}-offset-phone {
+        margin-left: $i / $grid-columns * 100%;
+      }
+
+      @if $i == 1 {
+        & > .col-0-offset-phone {
+          margin-left: $cell-margin;
+        }
+      }
+    }
+
+    // Tablet
+    @media screen and (max-width: $breakpoint-tablet - 1) {
+      & > .col-#{$i}-tablet {
+        margin-left: $cell-margin;
+        margin-right: $cell-margin;
+        width: calc(#{$i / $grid-columns * 100%} - #{$cell-margin * 2});
+      }
+
+      & > .col-#{$i}-offset-tablet {
+        margin-left: $i / $grid-columns * 100%;
+      }
+
+      @if $i == 1 {
+        & > .col-0-offset-tablet {
+          margin-left: $cell-margin;
+        }
+      }
+    }
+  }
+}

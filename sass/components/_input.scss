@@ -1,0 +1,45 @@
+input[type=text],
+input[type=password],
+input[type=number],
+input[type=email] {
+  padding: 10px;
+  outline: none;
+  width: 100%;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  display: inline-flex;
+  border: solid 1px $dark-gray;
+}
+
+input[type=button],
+input[type=submit],
+input[type=rest],
+button {
+  padding: 10px 15px;
+  outline: none;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  display: inline-flex;
+  background: $primary-color;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.form-group {
+  align-items: center;
+  margin-bottom: $cell-margin;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.input-group {
+  @for $i from 1 through $grid-columns {
+    & .col-#{$i} {
+      margin: 0;
+      width: calc(#{$i / $grid-columns * 100%});
+    }
+  }
+}

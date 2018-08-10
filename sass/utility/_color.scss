@@ -1,0 +1,58 @@
+@mixin color-maker($class-root, $color, $type) {
+  #{$class-root} {
+    #{$type}: $color;
+  }
+
+  #{$class-root}-hover:hover {
+    #{$type}: $color;
+  }
+
+  @for $i from 1 through $color-lighten-darken-count {
+
+    // We can't lighten white, so don't make the lighten class
+    @if $color != #ffffff {
+      #{$class-root}-lighten-#{$i}-hover:hover {
+        #{$type}: lighten($color, $i * $lighten-darken-multiplier);
+      }
+
+      #{$class-root}-lighten-#{$i} {
+        #{$type}: lighten($color, $i * $lighten-darken-multiplier);
+      }
+    }
+
+    // We can't darken black, so don't make the darken class
+    @if $color != #000000 {
+      #{$class-root}-darken-#{$i}-hover:hover {
+        #{$type}: darken($color, $i * $lighten-darken-multiplier);
+      }
+
+      #{$class-root}-darken-#{$i} {
+        #{$type}: darken($color, $i * $lighten-darken-multiplier);
+      }
+    }
+  }
+}
+
+// Create the background colors
+@include color-maker('.primary', $primary-color, background-color);
+@include color-maker('.secondary', $secondary-color, background-color);
+@include color-maker('.black', #000000, background-color);
+@include color-maker('.white', #ffffff, background-color);
+
+// Create the foreground colors
+@include color-maker('.primary-text', $primary-color, color);
+@include color-maker('.secondary-text', $secondary-color, color);
+@include color-maker('.black-text', #000000, color);
+@include color-maker('.white-text', #ffffff, color);
+
+
+// Create the additional colors
+@each $name, $color in $additional-colors {
+  @include color-maker($name, $color, background-color);
+  @include color-maker($name + '-text', $color, color);
+}
+
+.accent {
+  color: #ffffff;
+  background-color: $secondary-color;
+}
