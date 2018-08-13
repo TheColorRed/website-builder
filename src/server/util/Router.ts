@@ -6,11 +6,23 @@ import { Mongo } from './Mongo'
 
 export type requestMethod = 'get' | 'post' | 'any'
 
-export interface route {
-  path: string,
-  method: requestMethod
-  name?: string
-  callback: string | ((client: Client, mongo: Mongo) => void | Response)
+export class route {
+
+  private _name: string = ''
+
+  public get routeName() { return this._name }
+
+  public constructor(
+    public readonly path: string,
+    public readonly method: requestMethod,
+    public readonly callback: string | ((client: Client, mongo: Mongo) => void | Response)
+  ) { }
+
+  public name(name: string) {
+    if (Router.findByName(name)) throw new Error('Route name "' + name + '" already exists')
+    this._name = name
+    return this
+  }
 }
 
 export class Router {
@@ -40,27 +52,27 @@ export class Router {
   }
 
   public static get(path: string, callback: string | ((client: Client, mongo: Mongo) => void | Response)) {
-    this.routes.push({
-      path,
-      method: 'get',
-      callback
-    })
+    let r = new route(path, 'get', callback)
+    this.routes.push(r)
+    return r
   }
 
   public static post(path: string, callback: string | ((client: Client, mongo: Mongo) => void | Response)) {
-    this.routes.push({
-      path,
-      method: 'post',
-      callback
-    })
+    this.routes.push()
+    let r = new route(path, 'post', callback)
+    this.routes.push(r)
+    return r
   }
 
   public static any(path: string, callback: string | ((client: Client, mongo: Mongo) => void | Response)) {
-    this.routes.push({
-      path,
-      method: 'any',
-      callback
-    })
+    this.routes.push()
+    let r = new route(path, 'any', callback)
+    this.routes.push(r)
+    return r
+  }
+
+  public static findByName(name: string) {
+    return this.routes.find(r => r.routeName == name)
   }
 
   private static find(route: UrlWithStringQuery, method: requestMethod) {

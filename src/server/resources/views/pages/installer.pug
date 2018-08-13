@@ -33,7 +33,10 @@ html(lang="en")
           .col-5.input-info This is the port number that the database is listening on.
         .row.form-group
           .col-2.text-bold Database
-          .col-5: input(name='db-database' type='text' required)
+          .col-5
+            .row.input-group
+              .col-11: input.sync(name='db-database' pattern='^[\\w-]+$' type='text' required)
+              a.col-1.center.re-sync.input-group-addon(href=''): i.fas.fa-sync
           .col-5.input-info This is the name of the database to use. It will store all the needed information.
         .row.form-group
           .col-2.text-bold Username
@@ -43,11 +46,12 @@ html(lang="en")
           .col-2.text-bold Password
           .col-5
             .row.toggle-password.input-group
-              .col-11
-                input.far(name='db-password' type='password')
-              a(href='').col-1.center.white-darken-3.toggle
-                i.far.fa-eye
+              .col-11: input(name='db-password' type='password')
+              a.col-1.center.toggle.input-group-addon(href=''): i.far.fa-eye
           .col-5.input-info This is the password that the above user will use to connect to the database.
+        .row.form-group
+          .col-9-offset
+          .col-3.text-right: input#test-connection(type='button' value='Test Connection')
 
       //- Admin setup
       .well
@@ -55,25 +59,25 @@ html(lang="en")
         .row: p.col-12 This will be the primary user which will not be deletable once created. However, this information can be changed later on.
         .row.form-group
           .col-2.text-bold Username
-          .col-5: input(name='admin-username' type='text' required)
-          .col-5.input-info This is the username you would like to use to login to the admin area.
+          .col-5: input(name='admin-username' pattern="\\w{5,15}" type='text' required)
+          .col-5.input-info This is the username you would like to use to login to the admin area. Must be between 5 and 15 characters long.
         .row.form-group
           .col-2.text-bold Password
           .col-5
             .row.toggle-password.input-group
               .col-11
-                input.far(name='admin-password' type='password' pattern="(\\w{3,}(\\s|$)){4,}" required)
-              a(href='').col-1.center.white-darken-3.toggle
+                input(name='admin-password' type='password' pattern="(\\w{3,}(\\s|$)){3,}" required)
+              a(href='').col-1.center.toggle.input-group-addon
                 i.far.fa-eye
-          .col-5.input-info A four word or more password where each word has at least three characters.
+          .col-5.input-info A three word or more password where each word has at least three characters.
         .row.form-group
           .col-2.text-bold First name
-          .col-5: input(name='admin-first' type='text' required)
-          .col-5.input-info This is your first name
+          .col-5: input(name='admin-first' pattern="^\\S.*(?<=\\S)$" type='text' required)
+          .col-5.input-info Your first name which cannot start or end with a space.
         .row.form-group
           .col-2.text-bold Last name
-          .col-5: input(name='admin-last' type='text' required)
-          .col-5.input-info This is your last name
+          .col-5: input(name='admin-last' pattern="^\\S.*(?<=\\S)$" type='text' required)
+          .col-5.input-info Your last name which cannot start or end with a space.
         .row.form-group
           .col-2.text-bold Email
           .col-5: input(name='admin-email' type='email' required)

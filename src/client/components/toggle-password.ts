@@ -12,7 +12,13 @@ namespace builder {
       if (!(input instanceof HTMLInputElement) || input.type != 'password') return
 
       // Toggle the input element once clicked
-      toggle.addEventListener('click', () => input.type = input.type == 'password' ? 'text' : 'password')
+      toggle.addEventListener('click', () => {
+        input.type = input.type == 'password' ? 'text' : 'password'
+        let i = toggle.querySelector('i')
+        if (!i) return
+        i.classList.toggle('fa-eye-slash', input.type == 'text')
+        i.classList.toggle('fa-eye', input.type == 'password')
+      })
     })
   })
 }

@@ -9,6 +9,11 @@ input[type=email] {
   letter-spacing: 2px;
   display: inline-flex;
   border: solid 1px $dark-gray;
+
+  &.required {
+    border: solid 1px $required-color;
+    background-color: lighten($required-color, 38);
+  }
 }
 
 input[type=button],
@@ -41,5 +46,19 @@ button {
       margin: 0;
       width: calc(#{$i / $grid-columns * 100%});
     }
+  }
+
+  & > input {
+    border: solid 1px #aaaaaa;
+
+    &:first-child {
+      border-right: none;
+    }
+  }
+
+  & > .input-group-addon:last-child {
+    border: solid 1px #aaaaaa;
+    border-left: none;
+    background-color: #eeeeee;
   }
 }

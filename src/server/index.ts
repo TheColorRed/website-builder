@@ -2,7 +2,7 @@ import * as http from 'http'
 import * as url from 'url'
 import * as fs from 'fs'
 import * as path from 'path'
-import { Client, Router } from './util'
+import { Client, Router, response } from './util'
 import * as mime from 'mime-types'
 import { emitter } from './util/Events';
 import { Mongo, MongoConnectionInfo } from './util/Mongo';
@@ -47,24 +47,26 @@ http.createServer((req, res) => {
             let stat = fs.statSync(filePath)
             if (stat.isFile()) {
               let type = mime.lookup(filePath) || 'text/plain'
-              return client.write(client.file(filePath).setHeader('Content-Type', type))
+              return client.write(response().file(filePath).setHeader('Content-Type', type))
             }
           } catch (e) { }
         }
 
         // If the website hasn't been installed yet
         // Redirect to the install page at "/install"
-        if (!status.installed && client.path != '/install') {
-          return client.write(client.redirect('/install'))
+        if (!status.installed && !client.path.match(/\/install*/)) {
+          return client.write(response().redirect.to('install'))
+        } else if (status.installed && client.path.match(/\/install*/)) {
+          return client.write(response().redirect.to('home'))
         }
 
         // If the static file doesn't exist
         // Try sending the request through the router
         // If the route was found send the response
         // Otherwise send a 404
-        let response = await Router.route(urlInfo, client, mongoClient)
-        if (!response) client.send404()
-        else client.write(response)
+        let resp = await Router.route(urlInfo, client, mongoClient)
+        if (!resp) client.write(response().send404())
+        else client.write(resp)
       })
     })
 }).listen(port, () => console.log('Listening on port ' + port))

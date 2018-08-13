@@ -3,6 +3,7 @@ const ts = require('gulp-typescript')
 // const sourcemaps = require('gulp-sourcemaps')
 const ncp = require('ncp').ncp
 const sass = require('gulp-sass')
+const uglify = require('gulp-uglify-es').default
 
 const projects = {
   server: {
@@ -17,16 +18,21 @@ gulp.task('build-server', function () {
   let tsconfig = projects.server.tsconfig
   var tsProject = ts.createProject(tsconfig)
   let tsResult = tsProject.src().pipe(tsProject())
-  return tsResult.js.pipe(gulp.dest('app')).on('end', () => {
-    ncp('src/server/resources', 'app/resources', function () { })
-  })
+  return tsResult.js.pipe(gulp.dest('app'))
+  // .on('end', () => {
+  //   ncp('src/server/resources', 'app/resources', function () { })
+  // })
+})
+
+gulp.task('copy-resources', function (files) {
+  return gulp.src('src/server/resources/**/*').pipe(gulp.dest('app/resources'))
 })
 
 gulp.task('build-client', function () {
   let tsconfig = projects.client.tsconfig
   var tsProject = ts.createProject(tsconfig)
   let tsResult = tsProject.src().pipe(tsProject())
-  return tsResult.js.pipe(gulp.dest('public/js'))
+  return tsResult.js.pipe(uglify()).pipe(gulp.dest('public/js'))
 })
 
 gulp.task('build-sass', function () {
@@ -34,8 +40,9 @@ gulp.task('build-sass', function () {
     .pipe(sass({ outputStyle: 'compressed' })).pipe(gulp.dest('public/css'))
 })
 
-gulp.task('Build', function () {
-  gulp.watch('src/server/**/*', ['build-server'])
+gulp.task('Build', ['build-server', 'build-client', 'build-sass'], function () {
+  gulp.watch(['src/server/**/*', '!src/server/{resources,resources/**}'], ['build-server'])
+  gulp.watch(['src/server/resources/**/*'], ['copy-resources'])
   gulp.watch('src/client/**/*', ['build-client'])
   gulp.watch('sass/**/*', ['build-sass'])
 })

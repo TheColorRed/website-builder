@@ -5,6 +5,7 @@ import * as querystring from 'querystring'
 import { renderFile } from 'pug'
 import { ServerResponse, IncomingMessage } from 'http'
 import { Response } from '.'
+import { Router } from './Router';
 
 export class Client {
 
@@ -31,47 +32,20 @@ export class Client {
   public get data() {
     let $this = this
     return {
-      get(key: string, defaultValue: string = '') {
+      get(key: string, defaultValue: string = ''): string {
         if ($this._get[key]) return $this._get[key]
         else return defaultValue
       },
-      post(key: string, defaultValue: string = '') {
+      post(key: string, defaultValue: string = ''): string {
         if ($this._post[key]) return $this._post[key]
         return defaultValue
       },
-      request(key: string, defaultValue: string = '') {
+      request(key: string, defaultValue: string = ''): string {
         if ($this._get[key]) return $this._get[key]
         else if ($this._post[key]) return $this._post[key]
         else return defaultValue
       }
     }
-  }
-
-  public file(path: string) {
-    return new Response(readFileSync(path).toString())
-  }
-
-  public pug(path: string) {
-    return new Response()
-      .setBody(renderFile(path))
-  }
-
-  public json(data: any) {
-    return new Response()
-      .setBody(JSON.stringify(data))
-      .setHeaders({ 'Content-Type': 'application/json' })
-  }
-
-  public redirect(path: string) {
-    return new Response()
-      .setCode(302)
-      .setHeaders({ 'Location': path })
-  }
-
-  public send404() {
-    return new Response()
-      .setCode(404)
-      .setBody(this.pug(join(__dirname, '../resources/views/errors/404.pug')).body)
   }
 
   public write(response: Response) {

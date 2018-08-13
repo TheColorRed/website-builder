@@ -4,8 +4,8 @@ export interface MongoConnectionInfo {
   hostname: string
   port: string
   database: string
-  username: string
-  password: string
+  username?: string
+  password?: string
 }
 
 export class Mongo {

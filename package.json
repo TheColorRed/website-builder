@@ -18,9 +18,11 @@
         "gulp-sass": "^4.0.1",
         "gulp-sourcemaps": "^2.6.4",
         "gulp-typescript": "^4.0.2",
+        "gulp-uglify-es": "^1.0.4",
         "ncp": "^2.0.0",
         "node-sass": "^4.9.0",
-        "typescript": "^2.8.3"
+        "typescript": "^2.8.3",
+        "uglify-es": "^3.3.9"
     },
     "dependencies": {
         "bcrypt": "^3.0.0",
