@@ -6,16 +6,16 @@ import { emitter } from '../util/Events'
 import * as bcrypt from 'bcrypt'
 
 export async function testConnection(client: Client) {
+  // Crete the connection object
   let connection: MongoConnectionInfo = {
     hostname: client.data.post('db-hostname'),
     port: client.data.post('db-port-number'),
     database: client.data.post('db-database'),
+    username: client.data.post('db-username'),
+    password: client.data.post('db-password')
   }
-  let username = client.data.post('db-username')
-  let password = client.data.post('db-password')
-  if (username.length > 0) connection['username'] = username
-  if (password.length > 0) connection['username'] = username
-  console.log(connection)
+
+  // Test the connection
   try {
     let mongo = await Mongo.connect(connection)
     mongo.close()
@@ -67,7 +67,7 @@ export async function install(client: Client) {
   let file = path.join(__dirname, '../resources/config/database/connection.json')
 
   try {
-    // Try and create the connection
+    // Try and create the connection, will throw error if it fails
     let conn = await Mongo.connect(connection)
     // Write the connection to file if the connection is successful
     await writeToJson(file, connection)

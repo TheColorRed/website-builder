@@ -18,7 +18,7 @@ namespace builder {
     let btnTestConnection = document.querySelector('#test-connection') as HTMLInputElement
     btnTestConnection && btnTestConnection.addEventListener('click', async e => {
       let items = document.querySelectorAll('input[name^=db-]') as NodeListOf<HTMLInputElement>
-      let response = await send('/install/testMongoConnection', toKeyValue(items), 'post')
+      let response = await send('/api/install/testMongoConnection', toKeyValue(items), 'post')
       if (response.error) alert(response.message)
       else alert('Connection successful')
     })

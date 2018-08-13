@@ -1,4 +1,10 @@
-import { Router } from '../util'
+import { Router, Client } from '../util'
 
-Router.post('/install', 'install@install')
-Router.post('/install/testMongoConnection', 'install@testConnection')
+function forceAjax(client: Client) {
+  if (client.ajax) return true
+}
+
+Router.group('/install', { middleware: [forceAjax] }, async () => {
+  Router.post('/', 'install@install')
+  Router.post('/testMongoConnection', 'install@testConnection')
+})

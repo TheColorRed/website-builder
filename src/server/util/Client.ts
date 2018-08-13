@@ -13,6 +13,7 @@ export class Client {
   public readonly res: ServerResponse
   public readonly path: string
   public readonly method: string
+  public readonly ajax: boolean = false
   public readonly _post: any
   public readonly _get: any
 
@@ -22,6 +23,7 @@ export class Client {
     this.method = (req.method || 'get').toLowerCase()
     this.path = req.url || '/'
     this._get = querystring.parse(parse(req.url || '').query || '')
+    this.ajax = req.headers['x-requested-with'] == 'XMLHttpRequest'
     try {
       this._post = JSON.parse(body)
     } catch (e) {

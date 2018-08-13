@@ -1,2 +1,4 @@
+import { Router } from '../util';
+
 import './web'
-import './api'
+Router.group('/api', async () => await import('./api'))

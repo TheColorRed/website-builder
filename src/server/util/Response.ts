@@ -69,11 +69,16 @@ export class Response {
     }
   }
 
-
   public send404() {
     return new Response()
       .setCode(404)
       .setBody(this.pug(join(__dirname, '../resources/views/errors/404.pug')).body)
+  }
+
+  public send500() {
+    return new Response()
+      .setCode(500)
+      .setBody(this.pug(join(__dirname, '../resources/views/errors/500.pug')).body)
   }
 
 }
