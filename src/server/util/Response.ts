@@ -1,11 +1,22 @@
 import { OutgoingHttpHeaders } from 'http'
 import { Router } from './Router'
-import { renderFile } from 'pug'
+import { renderFile, Options, LocalsObject } from 'pug'
 import { readFileSync } from 'fs'
-import { join } from 'path'
+import { join, resolve } from 'path'
 
 export function response() {
   return new Response()
+}
+
+export function render(path: string, options: Options & LocalsObject = {}) {
+  try {
+    path = path.startsWith('/') ? path.replace(/^\//g, '') : path
+    path = path.endsWith('.pug') ? path : path + '.pug'
+    let file = resolve(join(__dirname, '../resources/views'), path)
+    return response().pug(file, options)
+  } catch (e) {
+    return response().send500()
+  }
 }
 
 export class Response {
@@ -38,19 +49,37 @@ export class Response {
     return this
   }
 
-  public file(path: string) {
-    return new Response(readFileSync(path).toString())
+  public file(path: string, code = 200) {
+    return new Response(readFileSync(path).toString()).setCode(code)
   }
 
-  public pug(path: string) {
+  public pug(path: string): Response
+  public pug(path: string, code: number): Response
+  public pug(path: string, options: Options & LocalsObject): Response
+  public pug(path: string, options: Options & LocalsObject, code: number): Response
+  public pug(...args: any[]) {
+    let path = args[0] as string
+    let options = (args.length == 3 || (args.length == 2 && typeof args[1] != 'number') ? args[1] : {}) as Options & LocalsObject
+    let code = args.length == 2 && typeof args[1] == 'number' ? args[1] :
+      args.length == 3 ? args[2] : 200
+    console.log(options)
     return new Response()
-      .setBody(renderFile(path))
+      .setBody(renderFile(path, options))
+      .setCode(code)
   }
 
-  public json(data: any) {
+  public json(data: any, code = 200) {
     return new Response()
       .setBody(JSON.stringify(data))
+      .setCode(code)
       .setHeaders({ 'Content-Type': 'application/json' })
+  }
+
+  public html(data: string, code = 200) {
+    return new Response()
+      .setBody(data)
+      .setCode(code)
+      .setHeaders({ 'Content-Type': 'text/html' })
   }
 
   public get redirect() {
@@ -59,7 +88,7 @@ export class Response {
         let route = Router.findByName(name)
         return new Response()
           .setCode(302)
-          .setHeader('Location', route ? route.path : '')
+          .setHeader('Location', route ? route.path : '/')
       },
       location: function (path: string) {
         return new Response()

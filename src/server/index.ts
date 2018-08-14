@@ -2,24 +2,19 @@ import * as http from 'http'
 import * as url from 'url'
 import * as fs from 'fs'
 import * as path from 'path'
-import { Client, Router, response } from './util'
 import * as mime from 'mime-types'
-import { emitter } from './util/Events';
-import { Mongo, MongoConnectionInfo } from './util/Mongo';
+import { emitter } from './util/Events'
+import { Client, Router, response, AppStatus } from './util'
+import { Mongo, MongoConnectionInfo } from './util/Mongo'
+import { readJson } from './util/fs'
 
-const port = 3030
-
-import './routes'
-import { readJson } from './util/fs';
+/** @type {number} The port the app will listen on */
+const APP_PORT: number = 3030
+/** @type {string} The path to the mongodb configuration file */
+const MONGO_CONN_CONFIG: string = path.join(__dirname, './resources/config/database/connection.json')
 
 let mongoClient: Mongo
-
-emitter.on('update-mongo-connection', async () => {
-  let connection = await readJson<MongoConnectionInfo>(path.join(__dirname, './resources/config/database/connection.json'))
-  try {
-    mongoClient = await Mongo.connect(connection)
-  } catch (e) { }
-})
+let appStatus: AppStatus
 
 http.createServer((req, res) => {
   // Get the info about the request
@@ -35,38 +30,64 @@ http.createServer((req, res) => {
     })
     // Once all the data has been received start responding to the request
     .on('end', async () => {
-      readJson<{ installed: boolean }>(path.join(__dirname, './resources/config/status.json')).then(async status => {
-        // Create a new client
-        let client = new Client(req, res, body)
+      // Create a new client
+      let client = new Client(req, res, body, appStatus)
 
-        // Test if a path exists in the public folder
-        // If it does, send the file to the user and exit
-        if (urlInfo.pathname) {
-          let filePath = path.join(__dirname, '../public', urlInfo.pathname)
-          try {
-            let stat = fs.statSync(filePath)
-            if (stat.isFile()) {
-              let type = mime.lookup(filePath) || 'text/plain'
-              return client.write(response().file(filePath).setHeader('Content-Type', type))
-            }
-          } catch (e) { }
-        }
+      // Test if a path exists in the public folder
+      // and if it does send the file and end the request
+      if (urlInfo.pathname) {
+        let filePath = path.join(__dirname, '../public', urlInfo.pathname)
+        try {
+          let stat = fs.statSync(filePath)
+          if (stat.isFile()) {
+            let type = mime.lookup(filePath) || 'text/plain'
+            return client.write(response().file(filePath).setHeader('Content-Type', type))
+          }
+        } catch (e) { }
+      }
 
-        // If the website hasn't been installed yet
-        // Redirect to the install page at "/install"
-        if (!status.installed && !client.path.match(/\/install*/)) {
-          return client.write(response().redirect.to('install'))
-        } else if (status.installed && client.path.match(/\/install*/)) {
-          return client.write(response().redirect.to('home'))
-        }
-
-        // If the static file doesn't exist
-        // Try sending the request through the router
-        // If the route was found send the response
-        // Otherwise send a 404
-        let resp = await Router.route(urlInfo, client, mongoClient)
-        if (!resp) client.write(response().send404())
-        else client.write(resp)
-      })
+      // If the static file doesn't exist try sending the request through the router
+      // If the route was found send the response otherwise send a 404
+      let resp = await Router.route(urlInfo, client, mongoClient)
+      if (!resp) client.write(response().send404())
+      else client.write(resp)
     })
-}).listen(port, () => console.log('Listening on port ' + port))
+}).listen(APP_PORT, async () => {
+  console.log('Started listening on port ' + APP_PORT)
+  // Get the current application status
+  await getAppStatus()
+  // Try connecting to the database
+  await databaseConnectionAttempt()
+  // Load the routes
+  console.log('Loading the application routes')
+  require('./routes')
+})
+
+
+emitter.on('update-mongo-connection', async () => {
+  await databaseConnectionAttempt()
+})
+
+emitter.on('update-app-status', async () => {
+  await getAppStatus()
+})
+
+/**
+ * Attempt to connect to the database
+ *
+ */
+async function databaseConnectionAttempt() {
+  let connection = await readJson<MongoConnectionInfo>(MONGO_CONN_CONFIG)
+  try {
+    console.log('Attempting to connect to the database')
+    mongoClient = await Mongo.connect(connection)
+    console.log('Database connection successful')
+  } catch (e) {
+    console.error('Database connection failed')
+  }
+}
+
+async function getAppStatus() {
+  console.log('Updating the application status')
+  appStatus = await readJson<AppStatus>(path.join(__dirname, './resources/config/status.json'))
+}

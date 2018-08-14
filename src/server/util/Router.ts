@@ -14,19 +14,38 @@ export interface RouterOptions {
 export class Route {
 
   private _name: string = ''
+  private _path!: UrlWithStringQuery
   public routeOptions: RouterOptions = {}
   public groupOptions: RouterOptions[] = []
 
   public get routeName() { return this._name }
+  public get path(): string {
+    if (!this.pathAlias.split('/').find(i => i.startsWith(':'))) return this.pathAlias
+    return this._path.pathname || '/'
+  }
 
   public constructor(
-    public readonly path: string,
+    public readonly pathAlias: string,
     public readonly method: requestMethod,
     public readonly callback: string | ((client: Client, mongo: Mongo) => void | Response)
   ) {
-    this.path = this.path.replace(/\\/g, '/').replace(/\/$/g, '')
-    if (!this.path.startsWith('/')) this.path = '/' + this.path
-    console.log(this.path)
+    this.pathAlias = this.pathAlias.replace(/\\/g, '/').replace(/\/$/g, '')
+    if (!this.pathAlias.startsWith('/')) this.pathAlias = '/' + this.pathAlias
+    console.log(`    ${method.padEnd(4, ' ')} ${this.pathAlias}`)
+  }
+
+  public get params(): { [key: string]: string } {
+    let returnParams: { [key: string]: string } = {}
+    let crumbs = this.pathAlias.split('/').filter(i => i.trim().length > 0)
+    let pathCrumbs = this.path.split('/').filter(i => i.trim().length > 0)
+    let params = crumbs
+      .map((i, idx) => { return { idx, val: i.startsWith(':') ? i : '' } })
+      .filter(i => i.val.length > 0)
+    params.forEach(p => {
+      returnParams[p.val.replace(':', '')] = pathCrumbs[p.idx]
+    })
+    // console.log(this.route.path, this.route.pathAlias)
+    return returnParams
   }
 
   public setRouteOptions(options: RouterOptions) {
@@ -42,7 +61,13 @@ export class Route {
     this._name = name
     return this
   }
+
+  public setPath(path: UrlWithStringQuery) {
+    this._path = path
+  }
 }
+
+export type RouteCallback = string | ((client: Client, mongo: Mongo) => void | Response | Promise<Response>)
 
 export class Router {
 
@@ -52,88 +77,95 @@ export class Router {
 
   public static async route(route: UrlWithStringQuery, client: Client, mongo: Mongo): Promise<Response | null> {
     // Try to find the route
-    let theRoute = this.find(route, <requestMethod>client.req.method || 'get')
+    let theRoute = this._find(route, <requestMethod>client.req.method || 'get')
+
+    if (theRoute) client.setRoute(theRoute)
 
     let callback
 
-    // If the callback is a string load the module from the controllers
-    // Then get the function in the file
-    if (theRoute && typeof theRoute.callback == 'string') {
-      let [controller, method] = theRoute.callback.split('@')
-      if (controller && method && controller.length > 0 && method.length > 0) {
-        let module = await import(path.join(__dirname, '../controllers', controller))
-        callback = module[method]
-      }
-    } else if (theRoute && typeof theRoute.callback == 'function') {
-      callback = theRoute.callback
-    }
-
+    // Execute the middleware that is attached to the route
     if (theRoute) {
       // Test the group middleware
-      if (theRoute.groupOptions.length > 0) {
-        for (let c of theRoute.groupOptions) {
-          if (c.middleware) {
-            for (let i of c.middleware) {
-              let result = i(client)
-              if (!result) return response().send500()
-            }
-          }
-        }
+      for (let c of theRoute.groupOptions) {
+        if (!c.middleware) continue
+        let result = this._runMiddleware(c.middleware, client)
+        if (result instanceof Response) return result
       }
       // Test the route specific middleware
       if (theRoute.routeOptions.middleware) {
-        for (let i of theRoute.routeOptions.middleware) {
-          let result = i(client)
-          if (!result) return response().send500()
-        }
+        let result = this._runMiddleware(theRoute.routeOptions.middleware, client)
+        if (result instanceof Response) return result
       }
     }
+
+    // If the callback is a string load the module from the controllers
+    // Then get the function in the file
+    try {
+      if (theRoute && typeof theRoute.callback == 'string') {
+        let [controller, method] = theRoute.callback.split('@')
+        if (controller && method && controller.length > 0 && method.length > 0) {
+          let module = await import(path.join(__dirname, '../controllers', controller))
+          callback = module[method]
+        }
+      } else if (theRoute && typeof theRoute.callback == 'function') {
+        callback = theRoute.callback
+      }
+    } catch (e) { }
 
     // If a valid route was found run the callback, otherwise send a 404
     return callback ? callback(client, mongo) : null
   }
 
-  public static async group(path: string, callback: Function): Promise<void>
-  public static async group(path: string, options: RouterOptions, callback: Function): Promise<void>
-  public static async group(...args: any[]): Promise<void> {
+  public static group(path: string, callback: Function): void
+  public static group(path: string, options: RouterOptions, callback: Function): void
+  public static group(...args: any[]): void {
     let path = args[0] as string
     let callback = args.length == 3 ? args[2] : args[1]
     this.groupOptions.push(args.length == 3 ? args[1] : {})
     this.groupPath.push(path)
-    await callback()
+    callback()
     this.groupPath.pop()
     this.groupOptions.pop()
   }
 
-  public static get(routePath: string, callback: string | ((client: Client, mongo: Mongo) => void | Response)): Route
-  public static get(routePath: string, options: RouterOptions, callback: string | ((client: Client, mongo: Mongo) => void | Response)): Route
+  public static get(callback: RouteCallback): Route
+  public static get(routePath: string, callback: RouteCallback): Route
+  public static get(routePath: string, options: RouterOptions, callback: RouteCallback): Route
   public static get(...args: any[]): Route {
-    let callback = args.length == 3 ? args[2] : args[1]
-    let r = new Route(path.join(...this.groupPath, args[0]), 'get', callback)
-    r.setGroupOptions(Object.assign([], this.groupOptions))
-    args.length == 3 && r.setRouteOptions(args[1])
-    this.routes.push(r)
-    return r
+    return this.createRoute('get', ...args)
   }
 
-  public static post(routePath: string, callback: string | ((client: Client, mongo: Mongo) => void | Response)): Route
-  public static post(routePath: string, options: RouterOptions, callback: string | ((client: Client, mongo: Mongo) => void | Response)): Route
+  public static post(callback: RouteCallback): Route
+  public static post(routePath: string, callback: RouteCallback): Route
+  public static post(routePath: string, options: RouterOptions, callback: RouteCallback): Route
   public static post(...args: any[]): Route {
-    let callback = args.length == 3 ? args[2] : args[1]
-    let r = new Route(path.join(...this.groupPath, args[0]), 'post', callback)
-    r.setGroupOptions(Object.assign([], this.groupOptions))
-    args.length == 3 && r.setRouteOptions(args[1])
-    this.routes.push(r)
-    return r
+    return this.createRoute('post', ...args)
   }
 
-  public static any(routePath: string, callback: string | ((client: Client, mongo: Mongo) => void | Response)): Route
-  public static any(routePath: string, options: RouterOptions, callback: string | ((client: Client, mongo: Mongo) => void | Response)): Route
+  public static any(callback: RouteCallback): Route
+  public static any(routePath: string, callback: RouteCallback): Route
+  public static any(routePath: string, options: RouterOptions, callback: RouteCallback): Route
   public static any(...args: any[]): Route {
-    let callback = args.length == 3 ? args[2] : args[1]
-    let r = new Route(path.join(...this.groupPath, args[0]), 'any', callback)
+    return this.createRoute('any', ...args)
+  }
+
+  private static createRoute(method: 'get' | 'post' | 'any', ...args: any[]) {
+    // Get the route callback
+    let callback = null
+    // only one parameter
+    if (args.length == 1) callback = args[0]
+    // More than one parameter
+    else callback = args.length == 3 ? args[2] : args[1]
+
+    // Get the route path
+    let routePath = args.length > 1 ? args[0] : '/'
+
+    // Create the new route
+    let r = new Route(path.join(...this.groupPath, routePath), method, callback)
     r.setGroupOptions(Object.assign([], this.groupOptions))
     args.length == 3 && r.setRouteOptions(args[1])
+
+    // Add the route to the list of routes
     this.routes.push(r)
     return r
   }
@@ -142,13 +174,41 @@ export class Router {
     return this.routes.find(r => r.routeName == name)
   }
 
-  private static find(route: UrlWithStringQuery, method: requestMethod) {
+  private static _runMiddleware(middleware: Function[], client: Client) {
+    for (let i of middleware) {
+      let result = i(client)
+      if (result instanceof Response) return result
+      if (!result) return response().send500()
+    }
+    return true
+  }
+
+  private static _find(route: UrlWithStringQuery, method: requestMethod) {
+    if (!route.pathname) return undefined
     // Find routes based on exact match
-    let theRoute = this.routes.find(r => r.path == route.pathname && method.toLowerCase() == r.method.toLowerCase())
-    // If no exact match was found,
+    let theRoute = this.routes.find(r => r.pathAlias == route.pathname && method.toLowerCase() == r.method.toLowerCase())
+    // If no exact match was found
     if (!theRoute) {
-      // TODO: find with placeholder examples:
-      //    "/post/:id", "/users/:username", etc.
+      let routeCrumbs = route.pathname.split('/').filter(i => i.trim().length > 0)
+      let routeDynParams = routeCrumbs.filter(i => i.startsWith(':'))
+      let routeLen = routeCrumbs.length
+      let routeDynParamsLen = routeDynParams.length
+
+      for (let r of this.routes) {
+        let crumbs = r.pathAlias.split('/').filter(i => i.trim().length > 0)
+        let dynParams = crumbs.filter(i => i.startsWith(':'))
+        // make sure the path lengths are the same and parameters exist
+        if (dynParams.length == 0 || (routeLen != crumbs.length && routeDynParamsLen != dynParams.length)) continue
+        // Make sure the methods are the same (get, post, etc.)
+        if (r.method.toLowerCase() != method.toLowerCase()) continue
+        // Make sure non-parameters are in the correct location
+        if (!crumbs.every((crumb, idx) => routeCrumbs[idx] == crumb || crumb.startsWith(':'))) continue
+        // Create a new instance of the route
+        theRoute = Object.assign(Object.create(r), r) as Route
+        // Set the current path of the route
+        theRoute instanceof Route && theRoute.setPath(route)
+        break
+      }
     }
     return theRoute
   }

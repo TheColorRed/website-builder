@@ -1,4 +1,4 @@
-import { MongoClient, Db, FilterQuery, FindOneOptions, Cursor } from 'mongodb'
+import { MongoClient, Db, FilterQuery, FindOneOptions, Cursor, IndexOptions } from 'mongodb'
 
 export interface MongoConnectionInfo {
   hostname: string
@@ -23,7 +23,7 @@ export class Mongo {
    */
   public static async connect(connection: MongoConnectionInfo) {
     try {
-      if (connection.username && (connection.password || '').trim().length == 0) throw new Error('Username requires a password')
+      if (connection.username && (connection.password || '').trim().length == 0) throw new Error('Mongodb username requires a password')
       let user = connection.username ? connection.username + ':' + connection.password + '@' : ''
       let client = await MongoClient.connect(`mongodb://${user}${connection.hostname}:${connection.port}`, { useNewUrlParser: true })
       return new Mongo(client, connection)
@@ -94,6 +94,27 @@ export class Mongo {
       return await table.findOne(query, options)
     }
     return await table.find<T>(query, options)
+  }
+
+  /**
+   * Get the number of documents found
+   *
+   * @param {string} collection The collection
+   * @param {FilterQuery<any>} query The query filter
+   * @returns
+   * @memberof Mongo
+   */
+  public async count(collection: string, query: FilterQuery<any>) {
+    let table = this.database.collection(collection)
+    return await table.countDocuments(query)
+  }
+
+  public async createIndex(collection: string, specs: object | object[], options?: IndexOptions) {
+    let table = this.database.collection(collection)
+    if (Array.isArray(specs)) {
+      return await table.createIndexes(specs, options)
+    }
+    return await table.createIndex(specs, options)
   }
 
   /**

@@ -1,3 +1,13 @@
-import { Router } from '../util'
+import { Router, render } from '../util'
 
-Router.get('/install', 'install@installPage').name('install')
+Router.get((client, mongo) => {
+  return render('/pages/home', { title: 'monkey' })
+}).name('home')
+
+Router.group('/install', () => {
+  Router.get(() => render('/pages/installer')).name('install')
+})
+
+Router.group('/admin', () => {
+  // Router.get('')
+})

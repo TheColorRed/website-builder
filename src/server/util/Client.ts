@@ -1,27 +1,26 @@
-import { readFileSync } from 'fs'
-import { join } from 'path'
 import { parse } from 'url'
 import * as querystring from 'querystring'
-import { renderFile } from 'pug'
 import { ServerResponse, IncomingMessage } from 'http'
-import { Response } from '.'
-import { Router } from './Router';
+import { Response, AppStatus } from '.'
+import { Route } from './Router';
 
 export class Client {
 
   public readonly req: IncomingMessage
   public readonly res: ServerResponse
-  public readonly path: string
   public readonly method: string
   public readonly ajax: boolean = false
+  public readonly appStatus: AppStatus
   public readonly _post: any
   public readonly _get: any
 
-  public constructor(req: IncomingMessage, res: ServerResponse, body: string) {
+  public route!: Route
+
+  public constructor(req: IncomingMessage, res: ServerResponse, body: string, appStatus: AppStatus) {
     this.req = req
     this.res = res
+    this.appStatus = appStatus
     this.method = (req.method || 'get').toLowerCase()
-    this.path = req.url || '/'
     this._get = querystring.parse(parse(req.url || '').query || '')
     this.ajax = req.headers['x-requested-with'] == 'XMLHttpRequest'
     try {
@@ -29,6 +28,11 @@ export class Client {
     } catch (e) {
       this._post = body
     }
+  }
+
+  public get path(): string {
+    if (this.route) return this.route.path
+    return '/'
   }
 
   public get data() {
@@ -48,6 +52,10 @@ export class Client {
         else return defaultValue
       }
     }
+  }
+
+  public setRoute(route: Route) {
+    this.route = route
   }
 
   public write(response: Response) {

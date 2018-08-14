@@ -10,8 +10,14 @@ namespace builder {
 
     // Handle the install button
     let btnInstall = document.querySelector('#install') as HTMLInputElement
-    btnInstall.addEventListener('click', e => {
-      submit(btnInstall.closest('form') as HTMLFormElement)
+    btnInstall.addEventListener('click', async e => {
+      e.preventDefault()
+      let response = await submit(btnInstall.closest('form') as HTMLFormElement)
+      if (!response.error) {
+        window.location.href = '/admin/login'
+      } else {
+        alert(response.message)
+      }
     })
 
     // Handle the test connection button
