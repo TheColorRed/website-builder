@@ -1,0 +1,13 @@
+@import 'variables';
+
+* {
+  box-sizing: border-box;
+}
+// Include the utilities
+@import 'utility/color';
+
+// Include the components
+@import 'components/grid';
+@import 'components/input';
+@import 'components/blocks';
+@import 'components/layout';
