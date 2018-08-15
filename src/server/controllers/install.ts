@@ -1,4 +1,4 @@
-import { Client, response, AppStatus } from '../util'
+import { Client, response, AppStatus, Element } from '../util'
 import * as path from 'path'
 import { readJson, writeToJson } from '../util/fs'
 import { Mongo, MongoConnectionInfo } from '../util/Mongo'
@@ -92,6 +92,8 @@ async function connect(client: Client) {
 async function createTableIndexes(conn: Mongo) {
   await conn.createIndex('admin', { email: 1 }, { name: 'uniq_email', unique: true })
   await conn.createIndex('admin', { user: 1 }, { name: 'uniq_user', unique: true })
+  await conn.createIndex('settings', { key: 1 }, { name: 'uniq_key', unique: true })
+  await conn.createIndex('pages', { path: 1 }, { name: 'uniq_path', unique: true })
 }
 
 async function insertTableData(conn: Mongo, client: Client) {
@@ -110,6 +112,14 @@ async function insertTableData(conn: Mongo, client: Client) {
     email: adminEmail,
     master: true
   })
+
+  // Insert the website title
+  await conn.insert('settings', {
+    key: 'website-title',
+    value: client.data.post('website-title')
+  })
+
+  await createHomePage(conn)
 }
 
 export async function updateAppStatus() {
@@ -118,4 +128,13 @@ export async function updateAppStatus() {
   data.installed = true
   await writeToJson(path.join(__dirname, '../resources/config/status.json'), data)
   emitter.emit('update-app-status')
+}
+
+export async function createHomePage(mongo: Mongo) {
+  let document = <Element>{
+    tag: '.container',
+    children: 'h1 {{settings.website-title}}'
+  }
+
+  await mongo.insertOrUpdate('pages', { path: '/' }, { document })
 }

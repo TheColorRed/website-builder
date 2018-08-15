@@ -1,6 +1,6 @@
 import { OutgoingHttpHeaders } from 'http'
 import { Router } from './Router'
-import { renderFile, Options, LocalsObject } from 'pug'
+import { renderFile, Options, LocalsObject, compile } from 'pug'
 import { readFileSync } from 'fs'
 import { join, resolve } from 'path'
 
@@ -62,9 +62,16 @@ export class Response {
     let options = (args.length == 3 || (args.length == 2 && typeof args[1] != 'number') ? args[1] : {}) as Options & LocalsObject
     let code = args.length == 2 && typeof args[1] == 'number' ? args[1] :
       args.length == 3 ? args[2] : 200
-    console.log(options)
+
     return new Response()
       .setBody(renderFile(path, options))
+      .setCode(code)
+  }
+
+  public fromTemplate(template: string, options: Options & LocalsObject = {}, code: number = 200): Response {
+    let fn = compile(template.replace(/\\n/g, '\n'))
+    return new Response()
+      .setBody(fn(options))
       .setCode(code)
   }
 

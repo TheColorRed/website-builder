@@ -16,7 +16,7 @@ const MONGO_CONN_CONFIG: string = path.join(__dirname, './resources/config/datab
 let mongoClient: Mongo
 let appStatus: AppStatus
 
-http.createServer((req, res) => {
+let server = http.createServer((req, res) => {
   // Get the info about the request
   let urlInfo = url.parse('http://' + req.headers.host + (req.url || '/'))
 
@@ -62,6 +62,19 @@ http.createServer((req, res) => {
   console.log('Loading the application routes')
   require('./routes')
 })
+
+process.on('SIGINT', () => {
+  console.warn('Application shutting down')
+  server.close(async (err: any) => {
+    if (err) {
+      console.error(err)
+      process.exit(1)
+    } else {
+      if (mongoClient) await mongoClient.close()
+      process.exit(0)
+    }
+  })
+}).on('message', () => console.log('here'))
 
 
 emitter.on('update-mongo-connection', async () => {

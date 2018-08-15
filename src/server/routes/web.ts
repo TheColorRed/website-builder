@@ -1,8 +1,7 @@
-import { Router, render } from '../util'
+import { Router, render, response, Element } from '../util'
 
-Router.get((client, mongo) => {
-  return render('/pages/home', { title: 'monkey' })
-}).name('home')
+Router.get('pages@page').name('home')
+Router.get('/save', 'pages@save')
 
 Router.group('/install', () => {
   Router.get(() => render('/pages/installer')).name('install')

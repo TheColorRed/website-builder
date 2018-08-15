@@ -113,7 +113,7 @@ export class Router {
     } catch (e) { }
 
     // If a valid route was found run the callback, otherwise send a 404
-    return callback ? callback(client, mongo) : null
+    return callback ? await callback(client, mongo) : null
   }
 
   public static group(path: string, callback: Function): void
@@ -128,23 +128,23 @@ export class Router {
     this.groupOptions.pop()
   }
 
-  public static get(callback: RouteCallback): Route
-  public static get(routePath: string, callback: RouteCallback): Route
-  public static get(routePath: string, options: RouterOptions, callback: RouteCallback): Route
+  public static get(callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
+  public static get(routePath: string, callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
+  public static get(routePath: string, options: RouterOptions, callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
   public static get(...args: any[]): Route {
     return this.createRoute('get', ...args)
   }
 
-  public static post(callback: RouteCallback): Route
-  public static post(routePath: string, callback: RouteCallback): Route
-  public static post(routePath: string, options: RouterOptions, callback: RouteCallback): Route
+  public static post(callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
+  public static post(routePath: string, callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
+  public static post(routePath: string, options: RouterOptions, callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
   public static post(...args: any[]): Route {
     return this.createRoute('post', ...args)
   }
 
-  public static any(callback: RouteCallback): Route
-  public static any(routePath: string, callback: RouteCallback): Route
-  public static any(routePath: string, options: RouterOptions, callback: RouteCallback): Route
+  public static any(callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
+  public static any(routePath: string, callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
+  public static any(routePath: string, options: RouterOptions, callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
   public static any(...args: any[]): Route {
     return this.createRoute('any', ...args)
   }
