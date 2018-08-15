@@ -108,7 +108,7 @@ export class Mongo {
   public async select<T extends any>(...args: any[]): Promise<T | Cursor<T>> {
     // Set param defaults
     let collection = args[0] as string
-    let query = args.length == 1 ? undefined : args[1] as FilterQuery<any>
+    let query = args.length == 1 ? {} : args[1] as FilterQuery<any>
     let limit = -1
     let options: FindOneOptions | undefined = args.length == 2 ? args[2] : {}
     let table = this.database.collection(collection)
