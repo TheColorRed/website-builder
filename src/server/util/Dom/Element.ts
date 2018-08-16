@@ -133,7 +133,8 @@ export class Element {
             .replace(/('|")$/, '')
       })
     }, [])
-    obj.properties = (selector.match(/:\D+/g) || []).reduce<string[]>((r, v) => r.concat(v.replace(/^:/, '')), [])
+    // find all properties not between two brackets
+    obj.properties = (selector.match(/:\w+(?![^[]*])/g) || []).reduce<string[]>((r, v) => r.concat(v.replace(/^:/, '')), [])
     obj.text = selector.includes(' ') ? selector.substr(selector.indexOf(' ') + 1) : ''
     return obj
   }

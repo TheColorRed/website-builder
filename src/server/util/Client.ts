@@ -1,13 +1,13 @@
 import { parse } from 'url'
 import * as querystring from 'querystring'
 import { ServerResponse, IncomingMessage } from 'http'
-import { Response, AppStatus } from '.'
+import { AppStatus } from '.'
 import { Route } from './Router';
 
 export class Client {
 
-  public readonly req: IncomingMessage
-  public readonly res: ServerResponse
+  // public readonly req: IncomingMessage
+  // public readonly res: ServerResponse
   public readonly method: string
   public readonly ajax: boolean = false
   public readonly appStatus: AppStatus
@@ -17,8 +17,8 @@ export class Client {
   public route!: Route
 
   public constructor(req: IncomingMessage, res: ServerResponse, body: string, appStatus: AppStatus) {
-    this.req = req
-    this.res = res
+    // this.req = req
+    // this.res = res
     this.appStatus = appStatus
     this.method = (req.method || 'get').toLowerCase()
     this._get = querystring.parse(parse(req.url || '').query || '')
@@ -50,17 +50,17 @@ export class Client {
         if ($this._get[key]) return $this._get[key]
         else if ($this._post[key]) return $this._post[key]
         else return defaultValue
+      },
+      toObject() {
+        let obj: { get: { [key: string]: any }, post: { [key: string]: any } } = { get: {}, post: {} }
+        for (let key in $this._get) { obj.get[key] = $this._get[key] }
+        for (let key in $this._post) { obj.get[key] = $this._post[key] }
+        return Object.freeze(obj)
       }
     }
   }
 
   public setRoute(route: Route) {
     this.route = route
-  }
-
-  public write(response: Response) {
-    this.res.writeHead(response.code, response.headers)
-    this.res.write(response.body)
-    this.res.end()
   }
 }

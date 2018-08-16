@@ -11,7 +11,7 @@ export interface MongoConnectionInfo {
 }
 
 export interface Setting {
-  _id: any
+  _id?: any
   key: string
   value: any
 }
@@ -143,28 +143,53 @@ export class Mongo {
    * @returns
    * @memberof Mongo
    */
-  public async settings(...keys: string[]): Promise<{ [key: string]: any }> {
+  public async settings(...keys: string[]) {
     let settings: Cursor<Setting>
     if (keys.length > 0) settings = await this.select<Setting>('settings', { key: { $in: keys } })
     else settings = await this.select<Setting>('settings')
     let data = await settings.toArray()
-    return new Array(keys.length || data.length)
-      .fill(null)
-      .map((v, k) => keys.length > 0 ? data.find(i => i.key == keys[k]) || <Setting>{ key: '', value: '' } : data[k])
-      .filter(i => i.key.length > 0)
+    let items = new Array<Setting>(keys.length || data.length)
+      .fill({ _id: '', key: '', value: '' })
+      .map((i, k) => keys.length > 0 ? data.find(i => i.key == keys[k]) || i : data[k])
       .map(i => { delete i._id; return i })
-      .reduce<{ [key: string]: any }>((obj, itm) => {
-        obj[itm.key] = itm.value
-        return obj
-      }, {})
+      .filter(i => String(i.key.trim()))
+      .reduce<{ [key: string]: any }>((obj, itm) => { obj[itm.key] = itm.value; return obj }, {})
+
+    // Create a proxy and freeze it
+    let p = new Proxy({
+      items: Object.freeze(items),
+      get(k: string, defaultValue: any = '') { return this.items[k] || defaultValue }
+    }, {
+        get(target: any, propertyKey: any) {
+          let prop = propertyKey.toString()
+          return target[prop] || target.items[prop] || ''
+        }
+      })
+    return Object.freeze(p) as { get(k: string, defaultValue?: any): any }
   }
 
-  public async renderPage(path: string, options?: any) {
-    return element.stringify((await this.page(path)).document, options)
-  }
-
+  /**
+   * Get a page from the database
+   *
+   * @param {string} path The url path
+   * @returns
+   * @memberof Mongo
+   */
   public async page(path: string) {
     return (await this.select<Page>('pages', { path }, 1)) || { path: '/', document: '' }
+  }
+
+  /**
+   * Get and render a page from the database
+   *
+   * @param {string} path The url path
+   * @param {{ [key: string]: any }} [options] Options to be used in the template
+   * @returns
+   * @memberof Mongo
+   */
+  public async renderPage(path: string, options?: { [key: string]: any }) {
+    console.log(options)
+    return element.stringify((await this.page(path)).document, options)
   }
 
   /**

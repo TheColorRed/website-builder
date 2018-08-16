@@ -133,7 +133,13 @@ export async function updateAppStatus() {
 export async function createHomePage(mongo: Mongo) {
   let document = <Element>{
     tag: '.container',
-    children: 'h1 {{settings.website-title}}'
+    children: [
+      'h1 {{settings.website-title}}',
+      {
+        tag: 'video[style="height:90vh"]#videoPlayer:controls:autoplay',
+        children: 'source[src=/bbb.mp4]'
+      }
+    ]
   }
 
   await mongo.insertOrUpdate('pages', { path: '/' }, { document })

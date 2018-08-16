@@ -45,7 +45,7 @@ export class Route {
       returnParams[p.val.replace(':', '')] = pathCrumbs[p.idx]
     })
     // console.log(this.route.path, this.route.pathAlias)
-    return returnParams
+    return Object.freeze(returnParams)
   }
 
   public setRouteOptions(options: RouterOptions) {
@@ -77,7 +77,7 @@ export class Router {
 
   public static async route(route: UrlWithStringQuery, client: Client, mongo: Mongo): Promise<Response | null> {
     // Try to find the route
-    let theRoute = this._find(route, <requestMethod>client.req.method || 'get')
+    let theRoute = this._find(route, <requestMethod>client.method || 'get')
 
     if (theRoute) client.setRoute(theRoute)
 

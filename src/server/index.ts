@@ -1,10 +1,11 @@
 import * as http from 'http'
+import { IncomingMessage, ServerResponse } from 'http'
 import * as url from 'url'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as mime from 'mime-types'
 import { emitter } from './util/Events'
-import { Client, Router, response, AppStatus } from './util'
+import { Client, Router, response, AppStatus, Response } from './util'
 import { Mongo, MongoConnectionInfo } from './util/Mongo'
 import { readJson } from './util/fs'
 
@@ -38,19 +39,18 @@ let server = http.createServer((req, res) => {
       if (urlInfo.pathname) {
         let filePath = path.join(__dirname, '../public', urlInfo.pathname)
         try {
-          let stat = fs.statSync(filePath)
-          if (stat.isFile()) {
-            let type = mime.lookup(filePath) || 'text/plain'
-            return client.write(response().file(filePath).setHeader('Content-Type', type))
-          }
+          let stat = await new Promise<fs.Stats>(resolve => fs.stat(filePath, (err, stat) => resolve(stat)))
+          // console.log(2e6)
+          // console.log(stat.size, filePath)
+          if (stat.isFile()) return stream(req, res, filePath, stat)
         } catch (e) { }
       }
 
       // If the static file doesn't exist try sending the request through the router
       // If the route was found send the response otherwise send a 404
       let resp = await Router.route(urlInfo, client, mongoClient)
-      if (!resp) client.write(response().send404())
-      else client.write(resp)
+      if (!resp) write(res, response().send404())
+      else write(res, resp)
     })
 }).listen(APP_PORT, async () => {
   console.log('Started listening on port ' + APP_PORT)
@@ -61,6 +61,7 @@ let server = http.createServer((req, res) => {
   // Load the routes
   console.log('Loading the application routes')
   require('./routes')
+  console.log('Application ready!')
 })
 
 process.on('SIGINT', () => {
@@ -103,4 +104,38 @@ async function databaseConnectionAttempt() {
 async function getAppStatus() {
   console.log('Updating the application status')
   appStatus = await readJson<AppStatus>(path.join(__dirname, './resources/config/status.json'))
+}
+
+
+function write(res: http.ServerResponse, response: Response) {
+  res.writeHead(response.code, response.headers)
+  res.write(response.body)
+  res.end()
+}
+
+function stream(req: IncomingMessage, res: ServerResponse, filePath: string, stats: fs.Stats) {
+  let total = stats.size
+  let contentType = mime.lookup(filePath) || 'application/octet-stream'
+  let start = 0, end = total - 1
+  if (total < 2e6) {
+    res.writeHead(200, { 'Content-Type': contentType })
+  } else {
+    let range = req.headers.range as string
+    let positions = range.replace(/bytes=/, '').split('-')
+    start = parseInt(positions[0], 10)
+    end = positions[1] ? parseInt(positions[1], 10) : total - 1
+    let chunkSize = (end - start) + 1
+    res.writeHead(206, {
+      'Content-Range': 'bytes ' + start + '-' + end + '/' + total,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunkSize,
+      'Content-Type': contentType
+    })
+  }
+  let stream = fs.createReadStream(filePath, { start, end })
+    .on('open', function () {
+      stream.pipe(res)
+    }).on('error', function (err) {
+      res.end(err)
+    })
 }

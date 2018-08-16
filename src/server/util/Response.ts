@@ -1,8 +1,9 @@
-import { OutgoingHttpHeaders } from 'http'
-import { Router } from './Router'
+import * as fs from 'fs'
+import * as mime from 'mime-types'
+import { OutgoingHttpHeaders, IncomingMessage, ServerResponse } from 'http'
 import { renderFile, Options, LocalsObject, compile } from 'pug'
-import { readFileSync } from 'fs'
 import { join, resolve } from 'path'
+import { Router } from './Router'
 
 export function response() {
   return new Response()
@@ -50,7 +51,7 @@ export class Response {
   }
 
   public file(path: string, code = 200) {
-    return new Response(readFileSync(path).toString()).setCode(code)
+    return new Response(fs.readFileSync(path).toString()).setCode(code)
   }
 
   public pug(path: string): Response
