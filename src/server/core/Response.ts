@@ -1,9 +1,17 @@
-import * as fs from 'fs'
 import * as mime from 'mime-types'
 import { OutgoingHttpHeaders, IncomingMessage, ServerResponse } from 'http'
 import { renderFile, Options, LocalsObject, compile } from 'pug'
 import { join, resolve } from 'path'
 import { Router } from './Router'
+
+export interface MediaObject {
+  _id: string
+  length: number
+  chunkSize: number
+  uploadDate: string
+  filename: string
+  md5: string
+}
 
 export function response() {
   return new Response()
@@ -22,13 +30,24 @@ export function render(path: string, options: Options & LocalsObject = {}) {
 
 export class Response {
 
+  private _filePath: string | null = null
+  private _media: MediaObject | null = null
+
   public constructor(public _body: string = '', public _headers: OutgoingHttpHeaders = {
     'Content-Type': 'text/html'
-  }, public _code: number = 200) { }
+  }, public _code: number = 200, public _length: number = 0) { }
 
   public get code(): number { return this._code }
   public get body(): string { return this._body }
   public get headers(): OutgoingHttpHeaders { return this._headers }
+  public get contentLength(): number { return this._length }
+  public get filePath(): string | null { return this._filePath }
+  public get media(): MediaObject | null { return this._media }
+
+  public setContentLength(length: number) {
+    this._length = length
+    return this
+  }
 
   public setCode(code: number) {
     this._code = code
@@ -37,6 +56,11 @@ export class Response {
 
   public setBody(body: string) {
     this._body = body
+    return this
+  }
+
+  public clearHeaders() {
+    this._headers = {}
     return this
   }
 
@@ -50,8 +74,16 @@ export class Response {
     return this
   }
 
-  public file(path: string, code = 200) {
-    return new Response(fs.readFileSync(path).toString()).setCode(code)
+  public setFile(path: string, code = 200) {
+    this._filePath = path
+    let contentType = mime.lookup(path) || 'application/octet-stream'
+    return this.setCode(code).setHeader('Content-Type', contentType)
+  }
+
+  public setMedia(data: MediaObject) {
+    this._media = data
+    let contentType = mime.lookup(data.filename) || 'application/octet-stream'
+    return this.setHeader('Content-Type', contentType).setContentLength(data.length)
   }
 
   public pug(path: string): Response

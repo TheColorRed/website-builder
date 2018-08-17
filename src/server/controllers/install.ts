@@ -1,8 +1,8 @@
-import { Client, response, AppStatus, Element } from '../util'
+import { Client, response, AppStatus, Element } from '../core'
 import * as path from 'path'
-import { readJson, writeToJson } from '../util/fs'
-import { Mongo, MongoConnectionInfo } from '../util/Mongo'
-import { emitter } from '../util/Events'
+import { readJson, writeToJson } from '../core/fs'
+import { Mongo, MongoConnectionInfo } from '../core/Mongo'
+import { emitter } from '../core/Events'
 import * as bcrypt from 'bcrypt'
 
 export async function testConnection(client: Client) {
@@ -136,8 +136,8 @@ export async function createHomePage(mongo: Mongo) {
     children: [
       'h1 {{settings.website-title}}',
       {
-        tag: 'video[style="height:90vh"]#videoPlayer:controls:autoplay',
-        children: 'source[src=/bbb.mp4]'
+        tag: 'video[style="height:90vh;max-width:100%"]#videoPlayer:autoplay',
+        children: 'source[src=/media/bbb.mp4][type=video/mp4]'
       }
     ]
   }

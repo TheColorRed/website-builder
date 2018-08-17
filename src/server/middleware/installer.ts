@@ -1,4 +1,4 @@
-import { Client, response } from '../util'
+import { Client, response } from '../core'
 
 export function loadInstaller(client: Client) {
   let regexp = /^(\/api)?\/install*/

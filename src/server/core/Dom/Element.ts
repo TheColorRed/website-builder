@@ -115,8 +115,8 @@ export class Element {
       properties: [],
       text: ''
     }
-    obj.id = (selector.match(/#[a-z-_0-9]+/) || [''])[0].replace('#', '')
-    obj.classList = (selector.match(/\.[a-z-_0-9]+/g) || []).map(v => v.replace('.', ''))
+    obj.id = (selector.match(/#\w+(?![^[]*])/) || [''])[0].replace('#', '')
+    obj.classList = (selector.match(/\.\w+(?![^[]*])/g) || []).map(v => v.replace('.', ''))
     obj.element = selector.toLowerCase().split(/[^a-z0-9]/, 2)[0] || 'div'
     obj.attributes = (selector.match(/\[.+?\]/g) || []).reduce<{ key: string, value: string }[]>((r, v) => {
       let [key, value] = v.split('=')

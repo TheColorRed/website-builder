@@ -1,6 +1,7 @@
-import { MongoClient, Db, FilterQuery, FindOneOptions, Cursor, IndexOptions } from 'mongodb'
-import { Options, LocalsObject, render } from 'pug';
-import { element, RootElement } from './Dom/Element';
+import * as fs from 'fs'
+import { MongoClient, Db, FilterQuery, FindOneOptions, Cursor, IndexOptions, GridFSBucket, ObjectID } from 'mongodb'
+import { element, RootElement } from './Dom/Element'
+import { MediaObject } from './Response';
 
 export interface MongoConnectionInfo {
   hostname: string
@@ -23,8 +24,10 @@ export interface Page {
 
 export class Mongo {
 
-  private client: MongoClient
-  private database: Db
+  private readonly client: MongoClient
+  private readonly database: Db
+
+  public get db(): Db { return this.database }
 
   /**
    * Connects to a mongo database
@@ -124,75 +127,6 @@ export class Mongo {
   }
 
   /**
-   * Gets a setting from the settings table
-   *
-   * @param {string} key The setting key
-   * @param {*} [defaultValue=null] The default setting value if the setting was not found
-   * @returns
-   * @memberof Mongo
-   */
-  public async setting<T extends any>(key: string, defaultValue: any = null): Promise<T> {
-    let setting = await this.select<Setting>('settings', { key }, 1)
-    return setting && setting.value ? setting.value : defaultValue
-  }
-
-  /**
-   * Gets a list of setting values from the settings table
-   *
-   * @param {...string[]} keys A list of setting keys
-   * @returns
-   * @memberof Mongo
-   */
-  public async settings(...keys: string[]) {
-    let settings: Cursor<Setting>
-    if (keys.length > 0) settings = await this.select<Setting>('settings', { key: { $in: keys } })
-    else settings = await this.select<Setting>('settings')
-    let data = await settings.toArray()
-    let items = new Array<Setting>(keys.length || data.length)
-      .fill({ _id: '', key: '', value: '' })
-      .map((i, k) => keys.length > 0 ? data.find(i => i.key == keys[k]) || i : data[k])
-      .map(i => { delete i._id; return i })
-      .filter(i => String(i.key.trim()))
-      .reduce<{ [key: string]: any }>((obj, itm) => { obj[itm.key] = itm.value; return obj }, {})
-
-    // Create a proxy and freeze it
-    let p = new Proxy({
-      items: Object.freeze(items),
-      get(k: string, defaultValue: any = '') { return this.items[k] || defaultValue }
-    }, {
-        get(target: any, propertyKey: any) {
-          let prop = propertyKey.toString()
-          return target[prop] || target.items[prop] || ''
-        }
-      })
-    return Object.freeze(p) as { get(k: string, defaultValue?: any): any }
-  }
-
-  /**
-   * Get a page from the database
-   *
-   * @param {string} path The url path
-   * @returns
-   * @memberof Mongo
-   */
-  public async page(path: string) {
-    return (await this.select<Page>('pages', { path }, 1)) || { path: '/', document: '' }
-  }
-
-  /**
-   * Get and render a page from the database
-   *
-   * @param {string} path The url path
-   * @param {{ [key: string]: any }} [options] Options to be used in the template
-   * @returns
-   * @memberof Mongo
-   */
-  public async renderPage(path: string, options?: { [key: string]: any }) {
-    console.log(options)
-    return element.stringify((await this.page(path)).document, options)
-  }
-
-  /**
    * Get the number of documents found
    *
    * @param {string} collection The collection to count
@@ -265,5 +199,105 @@ export class Mongo {
 
   public close() {
     this.client.close()
+  }
+
+
+
+  /**
+   * Gets a setting from the settings table
+   *
+   * @param {string} key The setting key
+   * @param {*} [defaultValue=null] The default setting value if the setting was not found
+   * @returns
+   * @memberof Mongo
+   */
+  public async setting<T extends any>(key: string, defaultValue: any = null): Promise<T> {
+    let setting = await this.select<Setting>('settings', { key }, 1)
+    return setting && setting.value ? setting.value : defaultValue
+  }
+
+  /**
+   * Gets a list of setting values from the settings table
+   *
+   * @param {...string[]} keys A list of setting keys
+   * @returns
+   * @memberof Mongo
+   */
+  public async settings(...keys: string[]) {
+    let settings: Cursor<Setting>
+    if (keys.length > 0) settings = await this.select<Setting>('settings', { key: { $in: keys } })
+    else settings = await this.select<Setting>('settings')
+    let data = await settings.toArray()
+    let items = new Array<Setting>(keys.length || data.length)
+      .fill({ _id: '', key: '', value: '' })
+      .map((i, k) => keys.length > 0 ? data.find(i => i.key == keys[k]) || i : data[k])
+      .map(i => { delete i._id; return i })
+      .filter(i => String(i.key.trim()))
+      .reduce<{ [key: string]: any }>((obj, itm) => { obj[itm.key] = itm.value; return obj }, {})
+
+    // Create a proxy and freeze it
+    let p = new Proxy({
+      items: Object.freeze(items),
+      get(k: string, defaultValue: any = '') { return this.items[k] || defaultValue }
+    }, {
+        get(target: any, propertyKey: any) {
+          let prop = propertyKey.toString()
+          return target[prop] || target.items[prop] || ''
+        }
+      })
+    return Object.freeze(p) as { get(k: string, defaultValue?: any): any }
+  }
+
+  /**
+   * Get a page from the database
+   *
+   * @param {string} path The url path
+   * @returns
+   * @memberof Mongo
+   */
+  public async page(path: string) {
+    return (await this.select<Page>('pages', { path }, 1)) || { path: '/', document: '' }
+  }
+
+  /**
+   * Get and render a page from the database
+   *
+   * @param {string} path The url path
+   * @param {{ [key: string]: any }} [options] Options to be used in the template
+   * @returns
+   * @memberof Mongo
+   */
+  public async renderPage(path: string, options?: { [key: string]: any }) {
+    // console.log(options)
+    return element.stringify((await this.page(path)).document, options)
+  }
+
+  public async saveFile(sourcePath: string, filePath: string) {
+    return new Promise(resolve => {
+      let grid = new GridFSBucket(this.database)
+      fs.createReadStream(sourcePath)
+        .pipe(grid.openUploadStream(filePath))
+        .on('error', () => resolve(false))
+        .on('finish', () => {
+          resolve(true)
+        })
+    })
+  }
+
+  public async deleteFile(id: ObjectID): Promise<void>
+  public async deleteFile(filePath: string): Promise<void>
+  public async deleteFile(arg: ObjectID | string): Promise<void> {
+    let file: MediaObject | null = null
+    let id = null
+    if (typeof arg == 'string') file = await this.findFile(arg)
+    if (file) id = new ObjectID(file._id)
+    else if (arg instanceof ObjectID) id = arg
+    else return
+    let grid = new GridFSBucket(this.database)
+    grid.delete(id)
+  }
+
+  public async findFile(filePath: string) {
+    return await this.select<MediaObject>('fs.files', { filename: filePath }, 1)
   }
 }

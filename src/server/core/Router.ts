@@ -20,22 +20,26 @@ export class Route {
 
   public get routeName() { return this._name }
   public get path(): string {
-    if (!this.pathAlias.split('/').find(i => i.startsWith(':'))) return this.pathAlias
+    if (typeof this.pathAlias == 'string' && !this.pathAlias.split('/').find(i => i.startsWith(':'))) return this.pathAlias
+    // console.log(this._path.pathname)
     return this._path.pathname || '/'
   }
 
   public constructor(
-    public readonly pathAlias: string,
+    public readonly pathAlias: string | RegExp,
     public readonly method: requestMethod,
     public readonly callback: string | ((client: Client, mongo: Mongo) => void | Response)
   ) {
-    this.pathAlias = this.pathAlias.replace(/\\/g, '/').replace(/\/$/g, '')
-    if (!this.pathAlias.startsWith('/')) this.pathAlias = '/' + this.pathAlias
+    if (typeof this.pathAlias == 'string') {
+      this.pathAlias = this.pathAlias.replace(/\\/g, '/').replace(/\/$/g, '')
+      if (!this.pathAlias.startsWith('/')) this.pathAlias = '/' + this.pathAlias
+    }
     console.log(`    ${method.padEnd(4, ' ')} ${this.pathAlias}`)
   }
 
   public get params(): { [key: string]: string } {
     let returnParams: { [key: string]: string } = {}
+    if (this.pathAlias instanceof RegExp) return {}
     let crumbs = this.pathAlias.split('/').filter(i => i.trim().length > 0)
     let pathCrumbs = this.path.split('/').filter(i => i.trim().length > 0)
     let params = crumbs
@@ -67,7 +71,7 @@ export class Route {
   }
 }
 
-export type RouteCallback = string | ((client: Client, mongo: Mongo) => void | Response | Promise<Response>)
+export type RouteCallback = string | ((client: Client, mongo: Mongo) => void | Response | Promise<Response> | Promise<void>)
 
 export class Router {
 
@@ -128,23 +132,23 @@ export class Router {
     this.groupOptions.pop()
   }
 
-  public static get(callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
-  public static get(routePath: string, callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
-  public static get(routePath: string, options: RouterOptions, callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
+  public static get(callback: RouteCallback): Route
+  public static get(routePath: string | RegExp, callback: RouteCallback): Route
+  public static get(routePath: string | RegExp, options: RouterOptions, callback: RouteCallback): Route
   public static get(...args: any[]): Route {
     return this.createRoute('get', ...args)
   }
 
-  public static post(callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
-  public static post(routePath: string, callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
-  public static post(routePath: string, options: RouterOptions, callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
+  public static post(callback: RouteCallback): Route
+  public static post(routePath: string, callback: RouteCallback): Route
+  public static post(routePath: string, options: RouterOptions, callback: RouteCallback): Route
   public static post(...args: any[]): Route {
     return this.createRoute('post', ...args)
   }
 
-  public static any(callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
-  public static any(routePath: string, callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
-  public static any(routePath: string, options: RouterOptions, callback: RouteCallback | Promise<RouteCallback> | Promise<void> | void): Route
+  public static any(callback: RouteCallback): Route
+  public static any(routePath: string, callback: RouteCallback): Route
+  public static any(routePath: string, options: RouterOptions, callback: RouteCallback): Route
   public static any(...args: any[]): Route {
     return this.createRoute('any', ...args)
   }
@@ -161,7 +165,12 @@ export class Router {
     let routePath = args.length > 1 ? args[0] : '/'
 
     // Create the new route
-    let r = new Route(path.join(...this.groupPath, routePath), method, callback)
+    let r: Route
+    if (routePath instanceof RegExp) {
+      r = new Route(routePath, method, callback)
+    } else {
+      r = new Route(path.join(...this.groupPath, routePath), method, callback)
+    }
     r.setGroupOptions(Object.assign([], this.groupOptions))
     args.length == 3 && r.setRouteOptions(args[1])
 
@@ -186,7 +195,13 @@ export class Router {
   private static _find(route: UrlWithStringQuery, method: requestMethod) {
     if (!route.pathname) return undefined
     // Find routes based on exact match
-    let theRoute = this.routes.find(r => r.pathAlias == route.pathname && method.toLowerCase() == r.method.toLowerCase())
+    let theRoute = this.routes.find(r => {
+      if (typeof r.pathAlias == 'string')
+        return r.pathAlias == route.pathname && method.toLowerCase() == r.method.toLowerCase()
+      else if (r.pathAlias instanceof RegExp)
+        return r.pathAlias.test(route.pathname || '')
+      return false
+    })
     // If no exact match was found
     if (!theRoute) {
       let routeCrumbs = route.pathname.split('/').filter(i => i.trim().length > 0)
@@ -195,6 +210,7 @@ export class Router {
       let routeDynParamsLen = routeDynParams.length
 
       for (let r of this.routes) {
+        if (r.pathAlias instanceof RegExp) break
         let crumbs = r.pathAlias.split('/').filter(i => i.trim().length > 0)
         let dynParams = crumbs.filter(i => i.startsWith(':'))
         // make sure the path lengths are the same and parameters exist
@@ -209,6 +225,11 @@ export class Router {
         theRoute instanceof Route && theRoute.setPath(route)
         break
       }
+    }
+
+    if (theRoute) {
+      theRoute = <Route>Object.create(theRoute)
+      theRoute.setPath(route)
     }
     return theRoute
   }

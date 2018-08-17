@@ -40,7 +40,7 @@ gulp.task('build-sass', function () {
     .pipe(sass({ outputStyle: 'compressed' })).pipe(gulp.dest('public/css'))
 })
 
-gulp.task('Build', ['build-server', 'build-client', 'build-sass'], function () {
+gulp.task('Build', ['build-server', 'build-client', 'build-sass', 'copy-resources'], function () {
   gulp.watch(['src/server/**/*', '!src/server/{resources,resources/**}'], ['build-server'])
   gulp.watch(['src/server/resources/**/*'], ['copy-resources'])
   gulp.watch('src/client/**/*', ['build-client'])

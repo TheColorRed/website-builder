@@ -1,4 +1,4 @@
-import { Router, response } from '../util';
+import { Router, response } from '../core';
 import { loadInstaller, forceAjax } from '../middleware'
 import { updateAppStatus } from '../controllers/install'
 
