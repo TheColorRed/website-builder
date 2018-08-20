@@ -1,5 +1,7 @@
 import * as fs from 'fs'
 
+export declare type KeyValuePair<T = any> = { [key: string]: T }
+
 /**
  * Reads the contents of a file
  *
@@ -44,6 +46,14 @@ export async function writeToJson(path: string, data: object) {
     fs.writeFile(path, JSON.stringify(data, null, 2), (err) => {
       resolve(!!!err)
     })
+  })
+}
+
+export async function updateJsonFile(path: string, key: string, value: any) {
+  return new Promise<boolean>(async resolve => {
+    let json = await readJson<KeyValuePair>(path)
+    json[key] = value
+    resolve(await writeToJson(path, json))
   })
 }
 

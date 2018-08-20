@@ -22,6 +22,12 @@ export interface Page {
   document: RootElement
 }
 
+export let mongoClient: Mongo
+
+export function setClient(client: Mongo) {
+  mongoClient = client
+}
+
 export class Mongo {
 
   private readonly client: MongoClient
@@ -164,7 +170,7 @@ export class Mongo {
    * @returns
    * @memberof Mongo
    */
-  public async insert(collection: string, data: object | object[]) {
+  public async insert<T>(collection: string, data: T | T[]) {
     let table = this.database.collection(collection)
     if (Array.isArray(data)) {
       return await table.insertMany(data)
@@ -183,7 +189,7 @@ export class Mongo {
    * @returns
    * @memberof Mongo
    */
-  public async update(collection: string, filter: FilterQuery<any>, data: object, limit = 0) {
+  public async update<T>(collection: string, filter: FilterQuery<any>, data: T, limit = 0) {
     let table = this.database.collection(collection)
     if (limit <= 1) {
       return await table.updateOne(filter, data)

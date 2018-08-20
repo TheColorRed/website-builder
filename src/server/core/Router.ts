@@ -21,7 +21,6 @@ export class Route {
   public get routeName() { return this._name }
   public get path(): string {
     if (typeof this.pathAlias == 'string' && !this.pathAlias.split('/').find(i => i.startsWith(':'))) return this.pathAlias
-    // console.log(this._path.pathname)
     return this._path.pathname || '/'
   }
 
@@ -34,7 +33,10 @@ export class Route {
       this.pathAlias = this.pathAlias.replace(/\\/g, '/').replace(/\/$/g, '')
       if (!this.pathAlias.startsWith('/')) this.pathAlias = '/' + this.pathAlias
     }
-    console.log(`    ${method.padEnd(4, ' ')} ${this.pathAlias}`)
+    let isAlreadyRoute = !!Router.findByAlias(this.method, String(this.pathAlias))
+    if (isAlreadyRoute) throw new Error(`Path already exists: "${String(this.pathAlias)}"`)
+    let display = this.pathAlias instanceof RegExp ? `RegExp(${this.pathAlias.source})` : this.pathAlias
+    console.log(`    ${method.padEnd(4, ' ')} ${display}`)
   }
 
   public get params(): { [key: string]: string } {
@@ -153,7 +155,7 @@ export class Router {
     return this.createRoute('any', ...args)
   }
 
-  private static createRoute(method: 'get' | 'post' | 'any', ...args: any[]) {
+  private static createRoute(method: requestMethod, ...args: any[]) {
     // Get the route callback
     let callback = null
     // only one parameter
@@ -181,6 +183,14 @@ export class Router {
 
   public static findByName(name: string) {
     return this.routes.find(r => r.routeName == name)
+  }
+
+  public static findByAlias(method: requestMethod, path: string) {
+    return this.routes.find(r => r.method == method && String(r.pathAlias) == path)
+  }
+
+  public static findByPath(method: requestMethod, path: string) {
+    return this.routes.find(r => r.method == method && r.path == path)
   }
 
   private static _runMiddleware(middleware: Function[], client: Client) {

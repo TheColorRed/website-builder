@@ -107,35 +107,36 @@ export class Response {
 
   public fromTemplate(template: string, options: Options & LocalsObject = {}, code: number = 200): Response {
     let fn = compile(template.replace(/\\n/g, '\n'))
-    return new Response()
+    return this
       .setBody(fn(options))
       .setCode(code)
   }
 
   public json(data: any, code = 200) {
-    return new Response()
+    return this
       .setBody(JSON.stringify(data))
       .setCode(code)
       .setHeaders({ 'Content-Type': 'application/json' })
   }
 
   public html(data: string, code = 200) {
-    return new Response()
+    return this
       .setBody(data)
       .setCode(code)
       .setHeaders({ 'Content-Type': 'text/html' })
   }
 
   public get redirect() {
+    let $this = this
     return {
       to: function (name: string) {
         let route = Router.findByName(name)
-        return new Response()
+        return $this
           .setCode(302)
           .setHeader('Location', route ? route.path : '/')
       },
       location: function (path: string) {
-        return new Response()
+        return $this
           .setCode(302)
           .setHeaders({ 'Location': path })
       }

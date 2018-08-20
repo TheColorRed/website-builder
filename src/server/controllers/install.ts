@@ -1,8 +1,8 @@
 import { Client, response, AppStatus, Element } from '../core'
 import * as path from 'path'
-import { readJson, writeToJson } from '../core/fs'
+import { readJson, writeToJson, updateJsonFile } from '../core/fs'
 import { Mongo, MongoConnectionInfo } from '../core/Mongo'
-import { emitter } from '../core/Events'
+import { emitter, Events } from '../core/Events'
 import * as bcrypt from 'bcrypt'
 
 export async function testConnection(client: Client) {
@@ -85,7 +85,7 @@ async function connect(client: Client) {
   await writeToJson(file, connection)
 
   // let the app know that the connection information has changed
-  emitter.emit('update-mongo-connection')
+  emitter.emit(Events.UpdateMongoConnection)
   return conn
 }
 
@@ -124,10 +124,8 @@ async function insertTableData(conn: Mongo, client: Client) {
 
 export async function updateAppStatus() {
   let statusFile = path.join(__dirname, '../resources/config/status.json')
-  let data = await readJson<AppStatus>(statusFile)
-  data.installed = true
-  await writeToJson(path.join(__dirname, '../resources/config/status.json'), data)
-  emitter.emit('update-app-status')
+  updateJsonFile(statusFile, 'installed', true)
+  emitter.emit(Events.UpdateAppStatus)
 }
 
 export async function createHomePage(mongo: Mongo) {

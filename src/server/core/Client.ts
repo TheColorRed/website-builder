@@ -3,6 +3,7 @@ import * as querystring from 'querystring'
 import { ServerResponse, IncomingMessage } from 'http'
 import { AppStatus } from '.'
 import { Route } from './Router';
+import { Session } from './Session';
 
 export class Client {
 
@@ -13,16 +14,16 @@ export class Client {
   public readonly appStatus: AppStatus
   public readonly _post: any
   public readonly _get: any
+  public readonly session: Session
 
   public route!: Route
 
   public constructor(req: IncomingMessage, res: ServerResponse, body: string, appStatus: AppStatus) {
-    // this.req = req
-    // this.res = res
     this.appStatus = appStatus
     this.method = (req.method || 'get').toLowerCase()
     this._get = querystring.parse(parse(req.url || '').query || '')
     this.ajax = req.headers['x-requested-with'] == 'XMLHttpRequest'
+    this.session = new Session(req, res)
     try {
       this._post = JSON.parse(body)
     } catch (e) {

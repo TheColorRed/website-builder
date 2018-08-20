@@ -12,7 +12,7 @@ namespace builder {
 
     // Handle the install button
     let btnInstall = document.querySelector('#install') as HTMLInputElement
-    btnInstall.addEventListener('click', async e => {
+    btnInstall && btnInstall.addEventListener('click', async e => {
       e.preventDefault()
       let response = await submit(btnInstall.closest('form') as HTMLFormElement)
       if (!response.error) {
@@ -52,16 +52,18 @@ namespace builder {
       update(database)
     })
 
-    // Form features
-    let form = btnInstall.closest('form') as HTMLFormElement
-    // Array.from(form.querySelectorAll<HTMLInputElement>('input[type=text], input[type=password], input[type=email], input[type=number]'))
-    Array.from(form.querySelectorAll<HTMLInputElement>('text,password,email,number'.replace(/\w+/g, 'input[type=$&]')))
-      .forEach(el => {
-        update(el)
-        el.addEventListener('input', function () {
-          if (!this.required) return
+    if (btnInstall) {
+      // Form features
+      let form = btnInstall.closest('form') as HTMLFormElement
+      // Array.from(form.querySelectorAll<HTMLInputElement>('input[type=text], input[type=password], input[type=email], input[type=number]'))
+      form && Array.from(form.querySelectorAll<HTMLInputElement>('text,password,email,number'.replace(/\w+/g, 'input[type=$&]')))
+        .forEach(el => {
           update(el)
+          el.addEventListener('input', function () {
+            if (!this.required) return
+            update(el)
+          })
         })
-      })
+    }
   })
 }

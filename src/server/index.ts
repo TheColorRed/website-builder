@@ -3,19 +3,17 @@ import * as url from 'url'
 import * as fs from 'fs'
 import { ReadStream, Stats } from 'fs'
 import * as path from 'path'
-import { emitter } from './core/Events'
+import { emitter, Events } from './core/Events'
 import { Client, Router, response, AppStatus, Response } from './core'
-import { Mongo, MongoConnectionInfo } from './core/Mongo'
+import { Mongo, MongoConnectionInfo, mongoClient, setClient } from './core/Mongo'
 import { readJson } from './core/fs'
-import { GridFSBucket, ObjectID, GridFSBucketReadStream } from 'mongodb'
-import { Stream } from 'stream'
+import { GridFSBucket, ObjectID } from 'mongodb'
 
 /** @type {number} The port the app will listen on */
 const APP_PORT: number = 3030
 /** @type {string} The path to the mongodb configuration file */
 const MONGO_CONN_CONFIG: string = path.join(__dirname, './resources/config/database/connection.json')
 
-let mongoClient: Mongo
 let appStatus: AppStatus
 
 let server = http.createServer((req, res) => {
@@ -115,12 +113,12 @@ process.on('SIGINT', () => {
   })
 }).on('message', () => console.log('here'))
 
-
-emitter.on('update-mongo-connection', async () => {
+emitter.on(Events.UpdateMongoConnection, async () => {
   await databaseConnectionAttempt()
+  emitter.emit(Events.MongoConnected)
 })
 
-emitter.on('update-app-status', async () => {
+emitter.on(Events.UpdateAppStatus, async () => {
   await getAppStatus()
 })
 
@@ -130,9 +128,9 @@ emitter.on('update-app-status', async () => {
  */
 async function databaseConnectionAttempt() {
   let connection = await readJson<MongoConnectionInfo>(MONGO_CONN_CONFIG)
+  console.log('Attempting to connect to the database')
   try {
-    console.log('Attempting to connect to the database')
-    mongoClient = await Mongo.connect(connection)
+    setClient(await Mongo.connect(connection))
     console.log('Database connection successful')
   } catch (e) {
     console.error('Database connection failed')

@@ -5,7 +5,7 @@ import { Router, render } from '../core'
 /// Prefix: /admin/api
 ////////////////////////////////////////////////////////////////////////////////
 
-Router.get('/login', () => render('/pages/admin/login'))
+Router.post('/login', 'admin@login').name('api-admin-login')
 
 Router.group('/install', () => {
   Router.post('install@install').name('api-admin-install')
