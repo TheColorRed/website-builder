@@ -12,8 +12,12 @@ html(lang="en")
     style.
       body{margin-top: 10px}
       .input-info{font-size: 0.8rem;line-height: initial;}
+    script.
+      const INSTALL = '#{route("api-admin-install")}'
+      const TEST_CONN = '#{route("api-admin-test-mongo")}'
+      const REDIRECT_TO = '#{route("admin-login")}'
   body
-    form.container(action="/api/install" method="post")
+    form.container(action=`${INSTALL}` method="post")
       //- Website information
       .well
         .row.form-group

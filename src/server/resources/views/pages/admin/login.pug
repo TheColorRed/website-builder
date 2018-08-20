@@ -1,0 +1,14 @@
+extends main
+
+block container
+  .row.viewport.viewport-center
+    .col-3
+      form.well(method='post' action='/admin/api/login')
+        .row.form-group
+          .col-4 Username
+          .col-8: input(type='text' name='username')
+        .row.form-group
+          .col-4 Password
+          .col-8: input(type='password' name='password')
+        .row
+          .col-12.text-right: input(type='submit')

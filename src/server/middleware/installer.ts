@@ -1,7 +1,7 @@
 import { Client, response } from '../core'
 
 export function loadInstaller(client: Client) {
-  let regexp = /^(\/api)?\/install*/
+  let regexp = /^\/admin(\/api)?\/install*/
   // If the website hasn't been installed yet redirect to the install page
   if (!client.appStatus.installed && !regexp.test(client.path)) {
     return client.ajax ? response().json({}, 500) : response().redirect.to('install')

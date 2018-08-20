@@ -1,4 +1,6 @@
 namespace builder {
+  declare const TEST_CONN: string
+  declare const REDIRECT_TO: string
   document.addEventListener('DOMContentLoaded', e => {
     function dbFormat(str: string) {
       return str.replace(/[^\w\s]+/g, '').replace(/\s/g, '-').replace(/-$/g, '').toLowerCase()
@@ -14,7 +16,7 @@ namespace builder {
       e.preventDefault()
       let response = await submit(btnInstall.closest('form') as HTMLFormElement)
       if (!response.error) {
-        window.location.href = '/admin/login'
+        window.location.href = REDIRECT_TO
       } else {
         alert(response.message)
       }
@@ -24,7 +26,7 @@ namespace builder {
     let btnTestConnection = document.querySelector('#test-connection') as HTMLInputElement
     btnTestConnection && btnTestConnection.addEventListener('click', async e => {
       let items = document.querySelectorAll('input[name^=db-]') as NodeListOf<HTMLInputElement>
-      let response = await send('/api/install/testMongoConnection', toKeyValue(items), 'post')
+      let response = await send(TEST_CONN, toKeyValue(items), 'post')
       if (response.error) alert(response.message)
       else alert('Connection successful')
     })

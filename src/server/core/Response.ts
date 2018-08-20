@@ -24,7 +24,7 @@ export function render(path: string, options: Options & LocalsObject = {}) {
     let file = resolve(join(__dirname, '../resources/views'), path)
     return response().pug(file, options)
   } catch (e) {
-    return response().send500()
+    return response().send500({ error: e.message })
   }
 }
 
@@ -93,6 +93,10 @@ export class Response {
   public pug(...args: any[]) {
     let path = args[0] as string
     let options = (args.length == 3 || (args.length == 2 && typeof args[1] != 'number') ? args[1] : {}) as Options & LocalsObject
+    options['route'] = function (name: string) {
+      let route = Router.findByName(name)
+      return route && route.path || ''
+    }
     let code = args.length == 2 && typeof args[1] == 'number' ? args[1] :
       args.length == 3 ? args[2] : 200
 
@@ -144,10 +148,10 @@ export class Response {
       .setBody(this.pug(join(__dirname, '../resources/views/errors/404.pug')).body)
   }
 
-  public send500() {
+  public send500(options: Options & LocalsObject = {}) {
     return new Response()
       .setCode(500)
-      .setBody(this.pug(join(__dirname, '../resources/views/errors/500.pug')).body)
+      .setBody(this.pug(join(__dirname, '../resources/views/errors/500.pug'), options).body)
   }
 
 }
