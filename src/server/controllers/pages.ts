@@ -1,5 +1,5 @@
 import * as path from 'path'
-import { Client, response, render } from '../core'
+import { Client, } from '../core'
 import { Mongo } from '../core/Mongo'
 import { createHomePage } from './install'
 
@@ -14,11 +14,11 @@ export async function page(client: Client, mongo: Mongo) {
     data: client.data.toObject(),
     params: client.route.params
   })
-  return render('/pages/main', page)
+  return client.response.render('/pages/main', page)
 }
 
 export async function save(client: Client, mongo: Mongo) {
   await createHomePage(mongo)
   await mongo.saveFile(path.join(__dirname, '../../media-backup/bbb.mp4'), '/media/bbb.mp4')
-  return response().json('done')
+  return client.response.json('done')
 }

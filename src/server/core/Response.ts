@@ -1,5 +1,5 @@
 import * as mime from 'mime-types'
-import { OutgoingHttpHeaders, IncomingMessage, ServerResponse } from 'http'
+import { OutgoingHttpHeaders } from 'http'
 import { renderFile, Options, LocalsObject, compile } from 'pug'
 import { join, resolve } from 'path'
 import { Router } from './Router'
@@ -11,21 +11,6 @@ export interface MediaObject {
   uploadDate: string
   filename: string
   md5: string
-}
-
-export function response() {
-  return new Response()
-}
-
-export function render(path: string, options: Options & LocalsObject = {}) {
-  try {
-    path = path.startsWith('/') ? path.replace(/^\//g, '') : path
-    path = path.endsWith('.pug') ? path : path + '.pug'
-    let file = resolve(join(__dirname, '../resources/views'), path)
-    return response().pug(file, options)
-  } catch (e) {
-    return response().send500({ error: e.message })
-  }
 }
 
 export class Response {
@@ -86,6 +71,17 @@ export class Response {
     return this.setHeader('Content-Type', contentType).setContentLength(data.length)
   }
 
+  public render(path: string, options: Options & LocalsObject = {}) {
+    try {
+      path = path.startsWith('/') ? path.replace(/^\//g, '') : path
+      path = path.endsWith('.pug') ? path : path + '.pug'
+      let file = resolve(join(__dirname, '../resources/views'), path)
+      return this.pug(file, options)
+    } catch (e) {
+      return this.send500({ error: e.message })
+    }
+  }
+
   public pug(path: string): Response
   public pug(path: string, code: number): Response
   public pug(path: string, options: Options & LocalsObject): Response
@@ -100,7 +96,7 @@ export class Response {
     let code = args.length == 2 && typeof args[1] == 'number' ? args[1] :
       args.length == 3 ? args[2] : 200
 
-    return new Response()
+    return this
       .setBody(renderFile(path, options))
       .setCode(code)
   }
@@ -144,13 +140,13 @@ export class Response {
   }
 
   public send404() {
-    return new Response()
+    return this
       .setCode(404)
       .setBody(this.pug(join(__dirname, '../resources/views/errors/404.pug')).body)
   }
 
   public send500(options: Options & LocalsObject = {}) {
-    return new Response()
+    return this
       .setCode(500)
       .setBody(this.pug(join(__dirname, '../resources/views/errors/500.pug'), options).body)
   }

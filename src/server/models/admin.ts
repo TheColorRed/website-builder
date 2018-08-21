@@ -1,3 +1,5 @@
+import { CookieSerializeOptions } from 'cookie'
+
 export interface AdminModel {
   user: string
   password: string
@@ -9,7 +11,12 @@ export interface AdminModel {
 
 export interface AdminSessionModel {
   id: string
-  expiration: number
+  cookie: CookieSerializeOptions
+  ttl: Date
+  flash: {
+    key: string
+    hits: number
+  }[]
   data: {
     [key: string]: any
   }

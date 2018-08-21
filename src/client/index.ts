@@ -49,7 +49,7 @@ namespace builder {
         let data = await submit(this)
         if (this.hasAttribute('callback')) {
           let callback = this.getAttribute('callback') as string
-          builder[callback](data)
+          (<any>builder)[callback](data)
         }
       })
     })

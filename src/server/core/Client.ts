@@ -1,29 +1,31 @@
 import { parse } from 'url'
 import * as querystring from 'querystring'
-import { ServerResponse, IncomingMessage } from 'http'
+import { IncomingMessage } from 'http'
 import { AppStatus } from '.'
 import { Route } from './Router';
 import { Session } from './Session';
+import { Response } from './Response';
 
 export class Client {
 
-  // public readonly req: IncomingMessage
-  // public readonly res: ServerResponse
   public readonly method: string
   public readonly ajax: boolean = false
   public readonly appStatus: AppStatus
-  public readonly _post: any
-  public readonly _get: any
   public readonly session: Session
+
+  private readonly _post: any
+  private readonly _get: any
+  private readonly _response: Response
 
   public route!: Route
 
-  public constructor(req: IncomingMessage, res: ServerResponse, body: string, appStatus: AppStatus) {
+  public constructor(req: IncomingMessage, body: string, appStatus: AppStatus) {
     this.appStatus = appStatus
     this.method = (req.method || 'get').toLowerCase()
     this._get = querystring.parse(parse(req.url || '').query || '')
     this.ajax = req.headers['x-requested-with'] == 'XMLHttpRequest'
-    this.session = new Session(req, res)
+    this.session = new Session(req, this)
+    this._response = new Response()
     try {
       this._post = JSON.parse(body)
     } catch (e) {
@@ -34,6 +36,10 @@ export class Client {
   public get path(): string {
     if (this.route) return this.route.path
     return '/'
+  }
+
+  public get response() {
+    return this._response
   }
 
   public get data() {

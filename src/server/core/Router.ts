@@ -3,7 +3,6 @@ import * as path from 'path'
 import { Client } from './Client'
 import { Response } from '.'
 import { Mongo } from './Mongo'
-import { response } from './Response';
 
 export type requestMethod = 'get' | 'post' | 'any'
 
@@ -33,10 +32,6 @@ export class Route {
       this.pathAlias = this.pathAlias.replace(/\\/g, '/').replace(/\/$/g, '')
       if (!this.pathAlias.startsWith('/')) this.pathAlias = '/' + this.pathAlias
     }
-    let isAlreadyRoute = !!Router.findByAlias(this.method, String(this.pathAlias))
-    if (isAlreadyRoute) throw new Error(`Path already exists: "${String(this.pathAlias)}"`)
-    let display = this.pathAlias instanceof RegExp ? `RegExp(${this.pathAlias.source})` : this.pathAlias
-    console.log(`    ${method.padEnd(4, ' ')} ${display}`)
   }
 
   public get params(): { [key: string]: string } {
@@ -68,6 +63,24 @@ export class Route {
     return this
   }
 
+  public is(name: string | RegExp) {
+    if (typeof name == 'string') {
+      return this._name == name
+    } else if (name instanceof RegExp) {
+      name.test(this._name)
+    }
+    return false
+  }
+
+  public isPath(path: string | RegExp) {
+    if (typeof path == 'string') {
+      return this._path.pathname == path
+    } else if (path instanceof RegExp) {
+      return path.test(this._path.pathname || '')
+    }
+    return false
+  }
+
   public setPath(path: UrlWithStringQuery) {
     this._path = path
   }
@@ -94,12 +107,12 @@ export class Router {
       // Test the group middleware
       for (let c of theRoute.groupOptions) {
         if (!c.middleware) continue
-        let result = this._runMiddleware(c.middleware, client)
+        let result = await this._runMiddleware(c.middleware, client)
         if (result instanceof Response) return result
       }
       // Test the route specific middleware
       if (theRoute.routeOptions.middleware) {
-        let result = this._runMiddleware(theRoute.routeOptions.middleware, client)
+        let result = await this._runMiddleware(theRoute.routeOptions.middleware, client)
         if (result instanceof Response) return result
       }
     }
@@ -166,12 +179,17 @@ export class Router {
     // Get the route path
     let routePath = args.length > 1 ? args[0] : '/'
 
+
     // Create the new route
     let r: Route
     if (routePath instanceof RegExp) {
       r = new Route(routePath, method, callback)
     } else {
-      r = new Route(path.join(...this.groupPath, routePath), method, callback)
+      let pathAlias = path.join(...this.groupPath, routePath)
+      let isAlreadyRoute = !!Router.findByAlias(method, pathAlias)
+      if (isAlreadyRoute) throw new Error(`Path already exists: "${String(pathAlias)}"`)
+      console.log(`    ${method.padEnd(4, ' ')} ${pathAlias}`)
+      r = new Route(pathAlias, method, callback)
     }
     r.setGroupOptions(Object.assign([], this.groupOptions))
     args.length == 3 && r.setRouteOptions(args[1])
@@ -193,11 +211,11 @@ export class Router {
     return this.routes.find(r => r.method == method && r.path == path)
   }
 
-  private static _runMiddleware(middleware: Function[], client: Client) {
-    for (let i of middleware) {
-      let result = i(client)
+  private static async _runMiddleware(middleware: Function[], client: Client) {
+    for (let callback of middleware) {
+      let result = await callback(client)
       if (result instanceof Response) return result
-      if (!result) return response().send500()
+      if (!result) return client.response.send500()
     }
     return true
   }

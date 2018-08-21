@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import { ReadStream, Stats } from 'fs'
 import * as path from 'path'
 import { emitter, Events } from './core/Events'
-import { Client, Router, response, AppStatus, Response } from './core'
+import { Client, Router, AppStatus, Response } from './core'
 import { Mongo, MongoConnectionInfo, mongoClient, setClient } from './core/Mongo'
 import { readJson } from './core/fs'
 import { GridFSBucket, ObjectID } from 'mongodb'
@@ -67,7 +67,7 @@ let server = http.createServer((req, res) => {
     // Once all the data has been received start responding to the request
     .on('end', async () => {
       // Create a new client
-      let client = new Client(req, res, body, appStatus)
+      let client = new Client(req, body, appStatus)
 
       // Test if a path exists in the public folder
       // and if it does send the file to end the request
@@ -76,7 +76,7 @@ let server = http.createServer((req, res) => {
         try {
           let stats = await new Promise<Stats>(resolve => fs.stat(filePath, (err, stat) => resolve(stat)))
           if (stats.isFile()) {
-            let resp = response().setFile(filePath).setContentLength(stats.size)
+            let resp = client.response.setFile(filePath).setContentLength(stats.size)
             return send(resp)
           }
         } catch (e) { }
@@ -85,7 +85,8 @@ let server = http.createServer((req, res) => {
       // If the static file doesn't exist try sending the request through the router
       // If the route was found send the response otherwise send a 404
       let resp = await Router.route(urlInfo, client, mongoClient)
-      if (!resp) send(response().send404())
+      await client.session.close()
+      if (!resp) send(client.response.send404())
       else send(resp.setHeader('Content-Type', 'text/html'))
     })
 }).listen(APP_PORT, async () => {
@@ -93,7 +94,7 @@ let server = http.createServer((req, res) => {
   // Get the current application status
   await getAppStatus()
   // Try connecting to the database
-  await databaseConnectionAttempt()
+  await attemptDatabaseConnection()
   // Load the routes
   console.log('Loading the application routes')
   require('./routes')
@@ -114,7 +115,7 @@ process.on('SIGINT', () => {
 }).on('message', () => console.log('here'))
 
 emitter.on(Events.UpdateMongoConnection, async () => {
-  await databaseConnectionAttempt()
+  await attemptDatabaseConnection()
   emitter.emit(Events.MongoConnected)
 })
 
@@ -126,11 +127,12 @@ emitter.on(Events.UpdateAppStatus, async () => {
  * Attempt to connect to the database
  *
  */
-async function databaseConnectionAttempt() {
+async function attemptDatabaseConnection() {
   let connection = await readJson<MongoConnectionInfo>(MONGO_CONN_CONFIG)
   console.log('Attempting to connect to the database')
   try {
-    setClient(await Mongo.connect(connection))
+    let mongo = await Mongo.connect(connection)
+    setClient(mongo)
     console.log('Database connection successful')
   } catch (e) {
     console.error('Database connection failed')

@@ -1,4 +1,4 @@
-import { Client, response, AppStatus, Element } from '../core'
+import { Client, Element } from '../core'
 import * as path from 'path'
 import { readJson, writeToJson, updateJsonFile } from '../core/fs'
 import { Mongo, MongoConnectionInfo } from '../core/Mongo'
@@ -19,9 +19,9 @@ export async function testConnection(client: Client) {
   try {
     let mongo = await Mongo.connect(connection)
     mongo.close()
-    return response().json({ error: false })
+    return client.response.json({ error: false })
   } catch (e) {
-    return response().json({ error: true, message: e.message }, 500)
+    return client.response.json({ error: true, message: e.message }, 500)
   }
 }
 
@@ -34,7 +34,7 @@ export async function install(client: Client) {
   if (status.installed) {
     resp.error = true
     resp.message = 'Application already installed'
-    return response().json(resp, 500)
+    return client.response.json(resp, 500)
   }
 
   try {
@@ -56,7 +56,7 @@ export async function install(client: Client) {
     resp.message = e.message
   }
 
-  return response().json(resp)
+  return client.response.json(resp)
 }
 
 async function connect(client: Client) {
@@ -90,10 +90,19 @@ async function connect(client: Client) {
 }
 
 async function createTableIndexes(conn: Mongo) {
+  // Admin table
   await conn.createIndex('admin', { email: 1 }, { name: 'uniq_email', unique: true })
   await conn.createIndex('admin', { user: 1 }, { name: 'uniq_user', unique: true })
+
+  // Application settings
   await conn.createIndex('settings', { key: 1 }, { name: 'uniq_key', unique: true })
+
+  // Pages
   await conn.createIndex('pages', { path: 1 }, { name: 'uniq_path', unique: true })
+
+  // Sessions
+  await conn.createIndex('sessions', { id: 1 }, { name: 'uniq_id', unique: true })
+  await conn.createIndex('sessions', { ttl: 1 }, { name: 'ttl', expireAfterSeconds: 0 })
 }
 
 async function insertTableData(conn: Mongo, client: Client) {
