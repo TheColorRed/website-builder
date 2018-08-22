@@ -14,6 +14,7 @@ export class Session {
   private _record: AdminSessionModel = {
     id: '',
     ttl: new Date(),
+    csrf: '',
     flash: [],
     cookie: {
       path: '/'
@@ -21,15 +22,13 @@ export class Session {
     data: {}
   }
 
+  public get csrf(): string { return this._record.csrf }
+
   public constructor(private req: IncomingMessage, private client: Client) { }
 
   public async start(options?: CookieSerializeOptions) {
     if (this._started) return
     this._started = true
-    // the current time
-    let date = Date.now()
-    // The number of seconds the session should live for
-    let seconds = 60 * 60 * 24 * 7
     // Get the cookies
     let cookies = cookie.parse(<string>this.req.headers.cookie || '')
     // Get the cookie sessid
@@ -37,15 +36,52 @@ export class Session {
     // Try to find the record in the database
     let record = await mongoClient.select<AdminSessionModel>(this._database, { id }, 1)
     if (!record) {
-      await this.createSession(options)
+      // Create the session information
+      this._createSession(options)
+      // Save the session information
+      await mongoClient.insert<AdminSessionModel>(this._database, this._record)
       return
     }
-    // If the session exits, update it's ttl
-    record.ttl = new Date(date + (seconds * 1000))
-    this._record.cookie.maxAge = seconds
-    // Send the new cookie info to the client
-    this.client.response.setHeader('Set-Cookie', cookie.serialize('sessid', id, this._record.cookie))
     this._record = record
+    // Send the new cookie info to the client
+    this.client.response.setHeader('Set-Cookie', cookie.serialize('sessid', this._record.id, this._record.cookie))
+  }
+
+  /**
+   * Increases the expiration by "x" seconds
+   *
+   * @param {number} seconds The number of seconds
+   * @memberof Session
+   */
+  public increaseTTL(seconds: number) {
+    this._record.ttl = new Date(this._record.ttl.getTime() + (seconds * 1000))
+    this._record.cookie.expires = this._record.ttl
+    this.client.response.setHeader('Set-Cookie', cookie.serialize('sessid', this._record.id, this._record.cookie))
+  }
+
+  /**
+   * Sets the expiration "x" seconds into the future.
+   *
+   * @param {number} seconds The number of seconds
+   * @memberof Session
+   */
+  public setTTL(seconds: number) {
+    this._record.ttl = new Date(Date.now() + (seconds * 1000))
+    this._record.cookie.expires = this._record.ttl
+    this.client.response.setHeader('Set-Cookie', cookie.serialize('sessid', this._record.id, this._record.cookie))
+  }
+
+  /**
+   * Destroys the current session.
+   *
+   * @memberof Session
+   */
+  public async destroy() {
+    // Set the expiration to 1 year ago
+    let newDate = new Date(Date.now() - 3.154e10)
+    this._record.cookie.expires = newDate
+    this._record.ttl = newDate
+    this.client.response.setHeader('Set-Cookie', cookie.serialize('sessid', this._record.id, this._record.cookie))
   }
 
   /**
@@ -56,16 +92,9 @@ export class Session {
   public async close() {
     if (this._closed || !this._started) return
     this._closed = true
-    // find flashed items
-    let toRemove = this._record.flash.filter(i => i.hits > 0)
-    let i = toRemove.length
-    while (i--) {
-      // Delete the flash item and it's reference
-      let idx = this._record.flash.findIndex(c => c.key == toRemove[i].key)
-      this._record.flash.splice(idx, 1)
-      this.remove(toRemove[i].key)
-    }
-    // Increment items that are still in the flash
+    // Remove the flashed items
+    this._unflash()
+    // Increment flashed items that still exist
     this._record.flash.forEach(i => i.hits++)
     // Update the mongo database
     await mongoClient.update(this._database, { id: this._record.id }, { $set: this._record })
@@ -78,7 +107,13 @@ export class Session {
    * @memberof Session
    */
   public async regenerate() {
-    // await this.createSession()
+    let currId = this._record.id
+    this._createSession()
+    await mongoClient.update(this._database, { id: currId }, { $set: this._record })
+  }
+
+  public generateCSRF(length: number = 32) {
+    this._record.csrf = crypto.randomBytes(length).toString('hex')
   }
 
   /**
@@ -158,26 +193,29 @@ export class Session {
     return !!this.get(key, false)
   }
 
-  private createId() {
-    return crypto.createHash('md5').update(((Math.random() * 1e6) + Date.now()).toString()).digest('hex').toString()
+  private _updateId() {
+    this._record.id = crypto.createHash('md5').update(((Math.random() * 1e6) + Date.now()).toString()).digest('hex').toString()
   }
 
-  private async createSession(options?: CookieSerializeOptions) {
-    let date = Date.now()
-    let seconds = 60 * 60 * 24 * 7
+  private _createSession(options?: CookieSerializeOptions) {
     // Create a new session id
-    let id = this.createId()
-    this._record.id = id
-    // Set the ttl so mongo can delete the item when it expires
-    // Multiply by 1000 to convert seconds to milliseconds
-    this._record.ttl = new Date(date + (seconds * 1000))
-    // This is the browser age, it is in seconds
-    this._record.cookie.maxAge = seconds
+    this._updateId()
+    this.setTTL(60 * 60 * 24 * 7)
     // Merge the cookie options with the default options
     this._record.cookie = Object.assign(this._record.cookie, options)
-    // Save the session information
-    await mongoClient.insert<AdminSessionModel>(this._database, this._record)
     // Send the cookie info to the client
-    this.client.response.setHeader('Set-Cookie', cookie.serialize('sessid', id, this._record.cookie))
+    this.client.response.setHeader('Set-Cookie', cookie.serialize('sessid', this._record.id, this._record.cookie))
+  }
+
+  private _unflash() {
+    // Find items that need to be removed
+    let toRemove = this._record.flash.filter(i => i.hits > 0)
+    let i = toRemove.length
+    while (i--) {
+      let idx = this._record.flash.findIndex(c => c.key == toRemove[i].key)
+      // Delete the flashed item and it's reference
+      this._record.flash.splice(idx, 1)
+      this.remove(toRemove[i].key)
+    }
   }
 }

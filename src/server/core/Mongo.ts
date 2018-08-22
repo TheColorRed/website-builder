@@ -132,6 +132,11 @@ export class Mongo {
     return await table.find<T>(query, options)
   }
 
+  public async aggregate(collection: string, pipeline: Object[]) {
+    let table = this.database.collection(collection)
+    return await table.aggregate(pipeline)
+  }
+
   /**
    * Get the number of documents found
    *
@@ -195,6 +200,15 @@ export class Mongo {
       return await table.updateOne(filter, data)
     }
     return await table.updateMany(filter, data)
+  }
+
+  public async delete(collection: string, filter: FilterQuery<any>, limit?: number) {
+    let table = this.database.collection(collection)
+    if (limit && limit == 1) {
+      return await table.deleteOne(filter)
+    } else {
+      return await table.deleteMany(filter)
+    }
   }
 
   public async insertOrUpdate(collection: string, filter: FilterQuery<any>, data: object, limit = 0) {

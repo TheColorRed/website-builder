@@ -1,6 +1,5 @@
 import * as path from 'path'
-import { Client, } from '../core'
-import { Mongo } from '../core/Mongo'
+import { Client, Mongo } from '../core'
 import { createHomePage } from './install'
 
 export async function page(client: Client, mongo: Mongo) {

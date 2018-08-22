@@ -1,5 +1,4 @@
-import { Client, Router, Route } from '../../core'
-import { Mongo } from '../../core/Mongo'
+import { Client, Router, Route, Mongo } from '../../core'
 import * as bcrypt from 'bcrypt'
 import { AdminModel } from '../../models/admin'
 
@@ -11,6 +10,8 @@ export async function login(client: Client, mongo: Mongo) {
   if (!result) return client.response.json({ error: true, message })
   let isValidPassword = await bcrypt.compare(password, result.password)
 
+  client.session.generateCSRF()
+
   client.session.set('admin.user', result.user)
   client.session.set('admin.first', result.first)
   client.session.set('admin.last', result.last)
@@ -21,4 +22,9 @@ export async function login(client: Client, mongo: Mongo) {
     message: !isValidPassword ? message : '',
     location: (<Route>Router.findByName('admin-home')).path
   })
+}
+
+export function logout(client: Client) {
+  client.session.destroy()
+  return client.response.redirect.to('admin-login')
 }

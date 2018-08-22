@@ -13,11 +13,10 @@ export interface AdminSessionModel {
   id: string
   cookie: CookieSerializeOptions
   ttl: Date
+  csrf: string
   flash: {
     key: string
     hits: number
   }[]
-  data: {
-    [key: string]: any
-  }
+  data: { [key: string]: any }
 }

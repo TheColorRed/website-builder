@@ -1,7 +1,6 @@
-import { Client, Element } from '../core'
+import { Client, Element, Mongo, MongoConnectionInfo } from '../core'
 import * as path from 'path'
 import { readJson, writeToJson, updateJsonFile } from '../core/fs'
-import { Mongo, MongoConnectionInfo } from '../core/Mongo'
 import { emitter, Events } from '../core/Events'
 import * as bcrypt from 'bcrypt'
 

@@ -3,6 +3,7 @@ import { OutgoingHttpHeaders } from 'http'
 import { renderFile, Options, LocalsObject, compile } from 'pug'
 import { join, resolve } from 'path'
 import { Router } from './Router'
+import { ObjectID } from 'bson';
 
 export interface MediaObject {
   _id: string
@@ -78,7 +79,7 @@ export class Response {
       let file = resolve(join(__dirname, '../resources/views'), path)
       return this.pug(file, options)
     } catch (e) {
-      return this.send500({ error: e.message })
+      return this.sendErrorPage(500, { error: e.message })
     }
   }
 
@@ -89,9 +90,10 @@ export class Response {
   public pug(...args: any[]) {
     let path = args[0] as string
     let options = (args.length == 3 || (args.length == 2 && typeof args[1] != 'number') ? args[1] : {}) as Options & LocalsObject
-    options['route'] = function (name: string) {
+    options['route'] = function (name: string, ...args: any[]) {
       let route = Router.findByName(name)
-      return route && route.path || ''
+      args = args.map(arg => arg instanceof ObjectID ? arg.toString() : arg)
+      return route && route.path ? join(route.path, ...args) : ''
     }
     let code = args.length == 2 && typeof args[1] == 'number' ? args[1] :
       args.length == 3 ? args[2] : 200
@@ -139,16 +141,22 @@ export class Response {
     }
   }
 
-  public send404() {
+  public sendErrorPage(code: number, options: Options & LocalsObject = {}) {
     return this
-      .setCode(404)
-      .setBody(this.pug(join(__dirname, '../resources/views/errors/404.pug')).body)
+      .setCode(code)
+      .setBody(this.pug(join(__dirname, '../resources/views/errors', code + '.pug'), options).body)
   }
 
-  public send500(options: Options & LocalsObject = {}) {
-    return this
-      .setCode(500)
-      .setBody(this.pug(join(__dirname, '../resources/views/errors/500.pug'), options).body)
-  }
+  // public send404() {
+  //   return this
+  //     .setCode(404)
+  //     .setBody(this.pug(join(__dirname, '../resources/views/errors/404.pug')).body)
+  // }
+
+  // public send500(options: Options & LocalsObject = {}) {
+  //   return this
+  //     .setCode(500)
+  //     .setBody(this.pug(join(__dirname, '../resources/views/errors/500.pug'), options).body)
+  // }
 
 }

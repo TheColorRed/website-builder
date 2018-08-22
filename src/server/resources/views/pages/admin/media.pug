@@ -1,0 +1,8 @@
+extends main
+
+block content
+  .well
+    h1 Media files
+  .well
+    each i in files
+      div: a(href=`${route('admin-media-file', i._id)}`)= i.filename

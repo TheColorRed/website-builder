@@ -1,6 +1,6 @@
 extends main
 
-block container
+block content
   .row.viewport.viewport-center
     .col-3
       form.well.ajax(method='post' action=`${route('api-admin-login')}` callback='adminLogin')

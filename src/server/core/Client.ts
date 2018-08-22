@@ -1,6 +1,6 @@
 import { parse } from 'url'
 import * as querystring from 'querystring'
-import { IncomingMessage } from 'http'
+import { IncomingMessage, IncomingHttpHeaders } from 'http'
 import { AppStatus } from '.'
 import { Route } from './Router';
 import { Session } from './Session';
@@ -15,6 +15,7 @@ export class Client {
 
   private readonly _post: any
   private readonly _get: any
+  private readonly _headers: IncomingHttpHeaders
   private readonly _response: Response
 
   public route!: Route
@@ -26,6 +27,7 @@ export class Client {
     this.ajax = req.headers['x-requested-with'] == 'XMLHttpRequest'
     this.session = new Session(req, this)
     this._response = new Response()
+    this._headers = req.headers
     try {
       this._post = JSON.parse(body)
     } catch (e) {
@@ -63,6 +65,19 @@ export class Client {
         for (let key in $this._get) { obj.get[key] = $this._get[key] }
         for (let key in $this._post) { obj.get[key] = $this._post[key] }
         return Object.freeze(obj)
+      }
+    }
+  }
+
+  public get headers() {
+    let $this = this
+    return {
+      get(key: string, defaultValue: any = '') {
+        let header = $this._headers[key]
+        return header || defaultValue
+      },
+      all() {
+        return $this._headers
       }
     }
   }

@@ -215,7 +215,7 @@ export class Router {
     for (let callback of middleware) {
       let result = await callback(client)
       if (result instanceof Response) return result
-      if (!result) return client.response.send500()
+      if (!result) return client.response.sendErrorPage(500)
     }
     return true
   }

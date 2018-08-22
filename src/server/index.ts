@@ -86,7 +86,7 @@ let server = http.createServer((req, res) => {
       // If the route was found send the response otherwise send a 404
       let resp = await Router.route(urlInfo, client, mongoClient)
       await client.session.close()
-      if (!resp) send(client.response.send404())
+      if (!resp) send(client.response.sendErrorPage(404))
       else send(resp.setHeader('Content-Type', 'text/html'))
     })
 }).listen(APP_PORT, async () => {
