@@ -19,9 +19,6 @@ gulp.task('build-server', function () {
   var tsProject = ts.createProject(tsconfig)
   let tsResult = tsProject.src().pipe(tsProject())
   return tsResult.js.pipe(gulp.dest('app'))
-  // .on('end', () => {
-  //   ncp('src/server/resources', 'app/resources', function () { })
-  // })
 })
 
 gulp.task('copy-resources', function (files) {
@@ -45,10 +42,10 @@ gulp.task('build-sass', function () {
     .on('error', err => console.error(err))
 })
 
-gulp.task('Build', ['build-server', 'build-client', 'build-sass', 'copy-resources'], function () {
-  gulp.watch(['src/server/**/*', '!src/server/{resources,resources/**}'], ['build-server'])
-  gulp.watch(['src/server/resources/**/*', '!src/server/resources/{views,views/**}'], ['copy-resources'])
-  gulp.watch(['src/server/resources/views/**/*'], ['copy-views'])
-  gulp.watch('src/client/**/*', ['build-client'])
-  gulp.watch('sass/**/*', ['build-sass'])
-})
+gulp.task('Build', gulp.series('build-server', 'build-client', 'build-sass', 'copy-resources', function () {
+  gulp.watch(['src/server/**/*', '!src/server/{resources,resources/**}'], gulp.series('build-server'))
+  gulp.watch(['src/server/resources/**/*', '!src/server/resources/{views,views/**}'], gulp.series('copy-resources'))
+  gulp.watch(['src/server/resources/views/**/*'], gulp.series('copy-views'))
+  gulp.watch('src/client/**/*', gulp.series('build-client'))
+  gulp.watch('sass/**/*', gulp.series('build-sass'))
+}))

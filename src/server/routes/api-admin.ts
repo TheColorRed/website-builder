@@ -1,5 +1,5 @@
 import { Router } from '../core'
-import { startSession } from '../middleware';
+import { startSession, adminLogged, csrf } from '../middleware';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Admin API
@@ -9,6 +9,11 @@ import { startSession } from '../middleware';
 Router.post('/login', { middleware: [startSession] }, 'admin@login').name('api-admin-login')
 
 Router.group('/install', () => {
-  Router.post('install@install').name('api-admin-install')
+  Router.post('admin/install').name('api-admin-install')
   Router.post('/testMongoConnection', 'install@testConnection').name('api-admin-test-mongo')
+})
+
+Router.group('/', { middleware: [startSession, adminLogged, csrf] }, () => {
+  Router.post('/media/delete', 'admin/trash@moveToTrash').name('api-admin-delete-media')
+  Router.post('/media/restore', 'admin/trash@restoreFromTrash').name('api-admin-restore-media')
 })

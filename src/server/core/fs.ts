@@ -1,6 +1,11 @@
 import * as fs from 'fs'
+import * as path from 'path'
 
 export declare type KeyValuePair<T = any> = { [key: string]: T }
+
+export function unixJoin(...segments: string[]) {
+  return path.join(...segments).replace(/\\/g, '/')
+}
 
 /**
  * Reads the contents of a file

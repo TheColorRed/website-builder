@@ -76,7 +76,7 @@ export class Mongo {
    * @returns {(Promise<T>)}
    * @memberof Mongo
    */
-  public async select<T extends any>(collection: string, query: FilterQuery<any>): Promise<Cursor<T>>
+  public async select<T extends any>(collection: string, query: FilterQuery<T>): Promise<Cursor<T>>
 
   /**
    * Selects one item from the database
@@ -88,7 +88,7 @@ export class Mongo {
    * @returns {Promise<T>}
    * @memberof Mongo
    */
-  public async select<T extends any>(collection: string, query: FilterQuery<any>, limit: 1): Promise<T>
+  public async select<T extends any>(collection: string, query: FilterQuery<T>, limit: 1): Promise<T>
 
   /**
    * Selects more than one item from the database
@@ -100,7 +100,7 @@ export class Mongo {
    * @returns {Promise<Cursor<T>>}
    * @memberof Mongo
    */
-  public async select<T extends any>(collection: string, query: FilterQuery<any>, limit: number): Promise<Cursor<T>>
+  public async select<T extends any>(collection: string, query: FilterQuery<T>, limit: number): Promise<Cursor<T>>
 
   /**
    * Selects more than one item from the database with additional options
@@ -113,7 +113,7 @@ export class Mongo {
    * @returns {Promise<Cursor<T>>}
    * @memberof Mongo
    */
-  public async select<T extends any>(collection: string, query: FilterQuery<any>, options: FindOneOptions, limit: number): Promise<Cursor<T>>
+  public async select<T extends any>(collection: string, query: FilterQuery<T>, options: FindOneOptions, limit: number): Promise<Cursor<T>>
   public async select<T extends any>(...args: any[]): Promise<T | Cursor<T>> {
     // Set param defaults
     let collection = args[0] as string
@@ -292,32 +292,4 @@ export class Mongo {
     return element.stringify((await this.page(path)).document, options)
   }
 
-  public async saveFile(sourcePath: string, filePath: string) {
-    return new Promise(resolve => {
-      let grid = new GridFSBucket(this.database)
-      fs.createReadStream(sourcePath)
-        .pipe(grid.openUploadStream(filePath))
-        .on('error', () => resolve(false))
-        .on('finish', () => {
-          resolve(true)
-        })
-    })
-  }
-
-  public async deleteFile(id: ObjectID): Promise<void>
-  public async deleteFile(filePath: string): Promise<void>
-  public async deleteFile(arg: ObjectID | string): Promise<void> {
-    let file: MediaObject | null = null
-    let id = null
-    if (typeof arg == 'string') file = await this.findFile(arg)
-    if (file) id = new ObjectID(file._id)
-    else if (arg instanceof ObjectID) id = arg
-    else return
-    let grid = new GridFSBucket(this.database)
-    grid.delete(id)
-  }
-
-  public async findFile(filePath: string) {
-    return await this.select<MediaObject>('fs.files', { filename: filePath }, 1)
-  }
 }

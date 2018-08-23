@@ -3,6 +3,7 @@ import * as path from 'path'
 import { Client } from './Client'
 import { Response } from '.'
 import { Mongo } from './Mongo'
+import { unixJoin } from './fs';
 
 export type requestMethod = 'get' | 'post' | 'any'
 
@@ -20,7 +21,7 @@ export class Route {
   public get routeName() { return this._name }
   public get path(): string {
     if (typeof this.pathAlias == 'string' && !this.pathAlias.split('/').find(i => i.startsWith(':'))) return this.pathAlias
-    return this._path.pathname || '/'
+    return (this._path.pathname || '/')
   }
 
   public constructor(
@@ -29,9 +30,10 @@ export class Route {
     public readonly callback: string | ((client: Client, mongo: Mongo) => void | Response)
   ) {
     if (typeof this.pathAlias == 'string') {
-      this.pathAlias = this.pathAlias.replace(/\\/g, '/').replace(/\/$/g, '')
+      this.pathAlias = unixJoin(this.pathAlias).replace(/\/$/g, '')
       if (!this.pathAlias.startsWith('/')) this.pathAlias = '/' + this.pathAlias
     }
+    console.log(`    ${method.padEnd(4, ' ')} ${this.pathAlias instanceof RegExp ? `RegExp(${this.pathAlias.source})` : this.pathAlias}`)
   }
 
   public get params(): { [key: string]: string } {
@@ -99,7 +101,6 @@ export class Router {
     let theRoute = this._find(route, <requestMethod>client.method || 'get')
 
     if (theRoute) client.setRoute(theRoute)
-
     let callback
 
     // Execute the middleware that is attached to the route
@@ -122,6 +123,7 @@ export class Router {
     try {
       if (theRoute && typeof theRoute.callback == 'string') {
         let [controller, method] = theRoute.callback.split('@')
+        if (!method) method = 'main'
         if (controller && method && controller.length > 0 && method.length > 0) {
           let module = await import(path.join(__dirname, '../controllers', controller))
           callback = module[method]
@@ -179,7 +181,6 @@ export class Router {
     // Get the route path
     let routePath = args.length > 1 ? args[0] : '/'
 
-
     // Create the new route
     let r: Route
     if (routePath instanceof RegExp) {
@@ -188,7 +189,6 @@ export class Router {
       let pathAlias = path.join(...this.groupPath, routePath)
       let isAlreadyRoute = !!Router.findByAlias(method, pathAlias)
       if (isAlreadyRoute) throw new Error(`Path already exists: "${String(pathAlias)}"`)
-      console.log(`    ${method.padEnd(4, ' ')} ${pathAlias}`)
       r = new Route(pathAlias, method, callback)
     }
     r.setGroupOptions(Object.assign([], this.groupOptions))

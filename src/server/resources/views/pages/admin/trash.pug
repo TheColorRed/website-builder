@@ -1,0 +1,24 @@
+extends main
+
+block content
+  script.
+    const TRASH_RESTORE_URL = '#{route.name("api-admin-restore-media")}'
+  .well.row
+    h1 Media File Trash
+  .well
+    if page == 'file-details' && files.length > 0
+      p.row.text-bold
+        span.col-1.text-center Restore
+        span.col-2 Filename
+        span.col-2 Date Uploaded
+        span.col-2 File Size
+    each i in files
+        p.row(data-id=`${i.data._id}`)
+          span.col-1.text-center
+            a(title="Move to trash" href="").trash-restore.light-blue-text: i.fa-lg.fas.fa-undo-alt
+            span.spinner.hidden: i.fa-lg.fas.fa-spin.fa-sync
+          span.col-2= i.data.filename
+          span.col-2= new Date(i.data.uploadDate).toLocaleString('en-US')
+          span.col-2: span(title=`${String(i.data.length).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} Bytes`)= (i.data.length / 1024 / 1024).toFixed(2) + ' MB'
+    else
+      div The trash is empty!

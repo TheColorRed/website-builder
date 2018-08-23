@@ -5,7 +5,19 @@
 
 .fluid {
   & > .row {
+    .col:first-child {
+      margin-left: 0;
+    }
+
+    .col:last-child {
+      margin-right: 0;
+    }
+
     @for $i from 1 through $grid-columns {
+      & > .col-#{$i} {
+        width: calc(#{$i / $grid-columns * 100%} - #{($cell-margin * 2) - 2});
+      }
+
       & > .col-#{$i}:first-child {
         margin-left: 0;
       }
@@ -93,6 +105,12 @@
     &:first-child {
       padding-top: 0;
     }
+  }
+
+  & > .col {
+    flex: 1;
+    margin-left: $cell-margin;
+    margin-right: $cell-margin;
   }
 
   @for $i from 1 through $grid-columns {

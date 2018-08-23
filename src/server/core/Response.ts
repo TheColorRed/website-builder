@@ -5,6 +5,7 @@ import { join, resolve } from 'path'
 import { Router } from './Router'
 import { ObjectID } from 'mongodb'
 import { Client } from './Client';
+import { unixJoin } from './fs';
 
 export interface MediaObject {
   _id: string
@@ -96,11 +97,30 @@ export class Response {
     options['route']['name'] = function (name: string, ...args: any[]) {
       let route = Router.findByName(name)
       args = args.map(arg => arg instanceof ObjectID ? arg.toString() : arg)
-      return route && route.path ? join(route.path, ...args) : ''
+      return route && route.path ? unixJoin(route.path, ...args) : ''
     }
     options['route']['is'] = function (name: string, truthy: any, falsy: any = '', ...args: any[]) {
       let r = this.name(name, ...args) as string
       return r == $this.client.path ? truthy : falsy
+    }
+    options['route']['in'] = function (names: string[], truthy: any, falsy: any = '', ...args: any[]) {
+      for (let name of names) {
+        let r = this.name(name, ...args) as string
+        if (r == $this.client.path) return truthy
+      }
+      return falsy
+    }
+    options['get'] = function (key: string) {
+      return $this.client.data.get(key)
+    }
+    options['post'] = function (key: string) {
+      return $this.client.data.post(key)
+    }
+    options['mime'] = function (filename: string) {
+      return mime.lookup(filename)
+    }
+    options['csrf'] = function () {
+      return $this.client.session.csrf
     }
     let code = args.length == 2 && typeof args[1] == 'number' ? args[1] :
       args.length == 3 ? args[2] : 200

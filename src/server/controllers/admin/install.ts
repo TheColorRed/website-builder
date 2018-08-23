@@ -1,7 +1,7 @@
-import { Client, Element, Mongo, MongoConnectionInfo } from '../core'
+import { Client, Element, Mongo, MongoConnectionInfo } from '../../core'
 import * as path from 'path'
-import { readJson, writeToJson, updateJsonFile } from '../core/fs'
-import { emitter, Events } from '../core/Events'
+import { readJson, writeToJson, updateJsonFile } from '../../core/fs'
+import { emitter, Events } from '../../core/Events'
 import * as bcrypt from 'bcrypt'
 
 export async function testConnection(client: Client) {
@@ -24,7 +24,7 @@ export async function testConnection(client: Client) {
   }
 }
 
-export async function install(client: Client) {
+export async function main(client: Client) {
   // Setup the default response
   let resp = { error: false, message: '' }
   // Get the current status
@@ -102,6 +102,10 @@ async function createTableIndexes(conn: Mongo) {
   // Sessions
   await conn.createIndex('sessions', { id: 1 }, { name: 'uniq_id', unique: true })
   await conn.createIndex('sessions', { ttl: 1 }, { name: 'ttl', expireAfterSeconds: 0 })
+
+  // Trash
+  // Delete from trash in 30 days
+  await conn.createIndex('trash', { ttl: 1 }, { name: 'ttl', expireAfterSeconds: 2.592e6 })
 }
 
 async function insertTableData(conn: Mongo, client: Client) {

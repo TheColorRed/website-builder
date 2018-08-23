@@ -1,6 +1,7 @@
 import * as path from 'path'
 import { Client, Mongo } from '../core'
-import { createHomePage } from './install'
+import { createHomePage } from './admin/install';
+import { MediaManager } from '../utils';
 
 export async function page(client: Client, mongo: Mongo) {
   let page = { title: '', header: '', main: '', footer: '', theme: '' }
@@ -18,6 +19,7 @@ export async function page(client: Client, mongo: Mongo) {
 
 export async function save(client: Client, mongo: Mongo) {
   await createHomePage(mongo)
-  await mongo.saveFile(path.join(__dirname, '../../media-backup/bbb.mp4'), '/media/bbb.mp4')
+  let media = new MediaManager(mongo)
+  await media.saveFile(path.join(__dirname, '../../media-backup/bbb.mp4'), '/media/bbb.mp4')
   return client.response.json('done')
 }

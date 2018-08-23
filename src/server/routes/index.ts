@@ -18,7 +18,7 @@ Router.group('/admin', { middleware: [loadInstaller] }, () => require('./web-adm
 // Gets files from the mongo database
 // These are files that are not apart of the website builder
 // Things such as movies/images/audio/etc.
-Router.get(/\/media\/.+/, async (client, mongo) => {
+Router.get(/^\/media\/.+/, async (client, mongo) => {
   let file = await mongo.findFile(client.path)
   if (!file) return client.response.sendErrorPage(404)
   return client.response.setMedia(file)

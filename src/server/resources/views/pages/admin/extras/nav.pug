@@ -4,7 +4,7 @@ nav.main
       a(href=`${route.name('admin-home')}`) #[i.fa-lg.fas.fa-fw.fa-home] Home
     li(class=`${route.is('admin-pages', 'active')}`)
       a(href=`${route.name('admin-pages')}`) #[i.fa-lg.fas.fa-fw.fa-code] Pages
-    li(class=`${route.is('admin-media', 'active')}`)
+    li(class=`${route.in(['admin-media', 'admin-media-file'], 'active')}`)
       a(href=`${route.name('admin-media')}`) #[i.fa-lg.fas.fa-fw.fa-theater-masks] Media
     li(class=`${route.is('admin-themes', 'active')}`)
       a(href=`${route.name('admin-themes')}`) #[i.fa-lg.fas.fa-fw.fa-palette] Themes
@@ -18,5 +18,7 @@ nav.main
       a(href=`${route.name('admin-tools')}`) #[i.fa-lg.fas.fa-fw.fa-wrench] Tools
     li(class=`${route.is('admin-settings', 'active')}`)
       a(href=`${route.name('admin-settings')}`) #[i.fa-lg.fas.fa-fw.fa-cog] Settings
+    li(class=`${route.is('admin-trash', 'active')}`)
+      a(href=`${route.name('admin-trash')}`) #[i.fa-lg.fas.fa-fw.fa-trash-alt] Trash
     li
       a(href=`${route.name('admin-logout')}`) #[i.fa-lg.fas.fa-fw.fa-power-off] Logout
