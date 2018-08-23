@@ -6,12 +6,24 @@ html(lang="en")
     meta(http-equiv="X-UA-Compatible", content="ie=edge")
     link(rel="stylesheet", href="/css/admin.css")
     link(rel="stylesheet", href="/css/themes/default.css")
+    link(rel="stylesheet", href="/css/themes/default-admin.css")
     script(src="/js/main.js")
-    title Admin
+    if title
+      title #{title} | Admin
+    else
+      title Admin
   body
-    .fluid
-      .row
-        .col-2.white
-          include extras/nav
-        .col-10.main-content
-          block content
+    .row.cell-no-margin
+      .col-2#main-nav
+        include extras/nav
+      .col-10.main-content
+        .row.cell-no-margin
+          .col-12#main-toolbar
+            .fluid
+              .row
+                .col-6
+                .col-6.text-right
+                  button.upload #[i.fas.fa-cloud-upload-alt] Upload
+        .row
+          .col-12#primary-content
+            block content

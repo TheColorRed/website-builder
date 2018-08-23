@@ -12,17 +12,13 @@ nav {
 
     li {
       display: block;
-      border-bottom: solid 1px darken(#ffffff, 10);
 
       & > a {
         display: block;
         padding: 10px;
 
-        &:hover {
-          background-color: darken(#ffffff, 5);
-        }
-
-        & > .fas {
+        & > .fas,
+        & > .far {
           margin-right: 16px;
         }
       }

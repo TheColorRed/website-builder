@@ -3,7 +3,7 @@ extends main
 block content
   .row.viewport.viewport-center
     .col-3
-      form.well.ajax(method='post' action=`${route('api-admin-login')}` callback='adminLogin')
+      form.well.ajax(method='post' action=`${route.name('api-admin-login')}` callback='adminLogin')
         .row.form-group
           .col-4 Username
           .col-8: input(type='text' name='username')

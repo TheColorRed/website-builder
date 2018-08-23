@@ -26,7 +26,7 @@ export class Client {
     this._get = querystring.parse(parse(req.url || '').query || '')
     this.ajax = req.headers['x-requested-with'] == 'XMLHttpRequest'
     this.session = new Session(req, this)
-    this._response = new Response()
+    this._response = new Response(this)
     this._headers = req.headers
     try {
       this._post = JSON.parse(body)

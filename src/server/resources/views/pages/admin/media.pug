@@ -2,7 +2,9 @@ extends main
 
 block content
   .well
-    h1 Media files
+    h1 Media Files
   .well
     each i in files
-      div: a(href=`${route('admin-media-file', i._id)}`)= i.filename
+      div: a(href=`${route.name('admin-media-file', i._id)}`)= i.filename
+    else
+      div No media files have been uploaded

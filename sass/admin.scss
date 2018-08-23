@@ -1,5 +1,4 @@
 @import 'variables';
-@import url(https://use.fontawesome.com/releases/v5.2.0/css/all.css);
 
 html,
 body {
@@ -43,9 +42,18 @@ h6 {
   }
 }
 
-.main-content {
-  margin-top: $cell-margin * 2;
+#main-toolbar {
+  padding: ($cell-margin * 2) 0;
+  margin-bottom: $cell-margin * 2;
+  color: #ffffff;
+
+  button.upload {
+    .fas {
+      margin-right: 10px;
+    }
+  }
 }
+
 // Include the utilities
 @import 'utility/color';
 

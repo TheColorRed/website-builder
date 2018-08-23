@@ -3,7 +3,8 @@ import { OutgoingHttpHeaders } from 'http'
 import { renderFile, Options, LocalsObject, compile } from 'pug'
 import { join, resolve } from 'path'
 import { Router } from './Router'
-import { ObjectID } from 'bson';
+import { ObjectID } from 'mongodb'
+import { Client } from './Client';
 
 export interface MediaObject {
   _id: string
@@ -19,7 +20,7 @@ export class Response {
   private _filePath: string | null = null
   private _media: MediaObject | null = null
 
-  public constructor(public _body: string = '', public _headers: OutgoingHttpHeaders = {
+  public constructor(private client: Client, public _body: string = '', public _headers: OutgoingHttpHeaders = {
     'Content-Type': 'text/html'
   }, public _code: number = 200, public _length: number = 0) { }
 
@@ -90,10 +91,16 @@ export class Response {
   public pug(...args: any[]) {
     let path = args[0] as string
     let options = (args.length == 3 || (args.length == 2 && typeof args[1] != 'number') ? args[1] : {}) as Options & LocalsObject
-    options['route'] = function (name: string, ...args: any[]) {
+    let $this = this
+    options['route'] = {}
+    options['route']['name'] = function (name: string, ...args: any[]) {
       let route = Router.findByName(name)
       args = args.map(arg => arg instanceof ObjectID ? arg.toString() : arg)
       return route && route.path ? join(route.path, ...args) : ''
+    }
+    options['route']['is'] = function (name: string, truthy: any, falsy: any = '', ...args: any[]) {
+      let r = this.name(name, ...args) as string
+      return r == $this.client.path ? truthy : falsy
     }
     let code = args.length == 2 && typeof args[1] == 'number' ? args[1] :
       args.length == 3 ? args[2] : 200

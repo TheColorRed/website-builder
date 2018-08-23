@@ -1,0 +1,44 @@
+@import '../variables';
+@import url(https://use.fontawesome.com/releases/v5.2.0/css/all.css);
+
+nav {
+  ul {
+    li.active {
+      a {
+        background-color: #00bb9b;
+        color: #ffffff;
+      }
+    }
+
+    li {
+      border-bottom: solid 1px darken(#1f303b, 10);
+
+      &:not(:first-child) {
+        border-top: solid 1px lighten(#1f303b, 10);
+      }
+
+      &:not(.active) {
+        a {
+          color: #ffffff;
+
+          &:hover {
+            background-color: darken(#363233, 5);
+          }
+        }
+      }
+    }
+  }
+}
+
+#main-nav {
+  background-color: #1f303b;
+}
+
+#main-toolbar {
+  background-color: lighten(#1f303b, 15);
+}
+
+#primary-content {
+  margin-left: $cell-margin * 2;
+  margin-right: $cell-margin * 2;
+}

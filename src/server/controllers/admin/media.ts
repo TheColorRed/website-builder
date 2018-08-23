@@ -7,5 +7,8 @@ export async function files(client: Client, mongo: Mongo) {
     { $group: { _id: '$filename', id: { $first: '$_id' } } },
     { $project: { _id: '$id', filename: '$_id' } }
   ])
-  return client.response.render('/pages/admin/media', { files: await files.toArray() })
+  return client.response.render('/pages/admin/media', {
+    files: await files.toArray(),
+    title: 'Media File Manager'
+  })
 }

@@ -52,15 +52,21 @@
   &.cell-no-margin {
     @for $i from 1 through $grid-columns {
       & > .col-#{$i} {
-        margin: 0;
+        margin-left: 0;
+        margin-right: 0;
+        width: calc(#{$i / $grid-columns * 100%});
       }
 
       & > .col-#{$i}-phone {
-        margin: 0;
+        margin-left: 0;
+        margin-right: 0;
+        width: calc(#{$i / $grid-columns * 100%});
       }
 
       & > .col-#{$i}-tablet {
-        margin: 0;
+        margin-left: 0;
+        margin-right: 0;
+        width: calc(#{$i / $grid-columns * 100%});
       }
     }
   }

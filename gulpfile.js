@@ -42,6 +42,7 @@ gulp.task('build-client', function () {
 gulp.task('build-sass', function () {
   return gulp.src('sass/**/*.scss')
     .pipe(sass({ outputStyle: 'compressed' })).pipe(gulp.dest('public/css'))
+    .on('error', err => console.error(err))
 })
 
 gulp.task('Build', ['build-server', 'build-client', 'build-sass', 'copy-resources'], function () {

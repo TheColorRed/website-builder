@@ -41,5 +41,5 @@ Router.get('/activate', async (client: Client) => {
   emitter.emit(Events.UpdateAppStatus)
   emitter.emit(Events.UpdateMongoConnection)
   await new Promise(resolve => emitter.once(Events.MongoConnected, () => resolve()))
-  return client.response.redirect.to('home')
+  return client.response.redirect.to('admin-login')
 })
