@@ -3,8 +3,10 @@ extends main
 block content
   script.
     const TRASH_RESTORE_URL = '#{route.name("api-admin-restore-media")}'
-  .well.row
-    h1 Media File Trash
+  .well
+    .fluid
+      .row
+        h1 Media File Trash
   .well
     if page == 'file-details' && files.length > 0
       p.row.text-bold

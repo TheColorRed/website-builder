@@ -1,28 +1,34 @@
 @import '../variables';
 @import url(https://use.fontawesome.com/releases/v5.2.0/css/all.css);
+$primary-nav: #1d4053;
+$secondary-nav: #0aa24f;
+
+// old blue: #1f303b
+// old green: #00bb9b
+// old black: #363233
 
 nav {
   ul {
     li.active {
       a {
-        background-color: #00bb9b;
+        background-color: $secondary-nav;
         color: #ffffff;
       }
     }
 
     li {
-      border-bottom: solid 1px darken(#1f303b, 10);
+      // border-bottom: solid 1px darken($primary-nav, 10);
 
-      &:not(:first-child) {
-        border-top: solid 1px lighten(#1f303b, 10);
-      }
+      // &:not(:first-child) {
+      //   border-top: solid 1px lighten($primary-nav, 10);
+      // }
 
       &:not(.active) {
         a {
           color: #ffffff;
 
           &:hover {
-            background-color: darken(#363233, 5);
+            background-color: darken($primary-nav, 5);
           }
         }
       }
@@ -31,11 +37,11 @@ nav {
 }
 
 #main-nav {
-  background-color: #1f303b;
+  background-color: $primary-nav;
 }
 
 #main-toolbar {
-  background-color: lighten(#1f303b, 15);
+  background-color: lighten($primary-nav, 15);
 }
 
 #primary-content {

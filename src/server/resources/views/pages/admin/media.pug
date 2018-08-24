@@ -3,9 +3,11 @@ extends main
 block content
   script.
     const TRASH_URL = '#{route.name("api-admin-delete-media")}'
-  .well.row
-    h1.col-6.no-margin #{page == 'file-details' ? ' ' + get('file') : 'Media Files'}
-    h1.col-6.text-right #{page == 'file-details' ? ' ' + mime(get('file')) : ''}
+  .well
+    .fluid
+      .row
+        h1.col-6.no-margin #{page == 'file-details' ? ' ' + get('file') : 'Media Files'}
+        h1.col-6.text-right #{page == 'file-details' ? ' ' + mime(get('file')) : ''}
   if page == 'file-list'
     .fluid
       .row
