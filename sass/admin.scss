@@ -64,35 +64,36 @@ h6 {
   margin-bottom: $block-margin-bottom;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.2), 0 2px 2px rgba(0, 0, 0, 0.2);
   color: #ffffff;
+  background-color: #ccc;
 
-  &.image-filter {
+  &.image-filter.active {
     background-color: #d61c52;
   }
 
-  &.audio-filter {
+  &.audio-filter.active {
     background-color: #ffaa30;
   }
 
-  &.video-filter {
+  &.video-filter.active {
     background-color: #6b0671;
   }
 
-  &.compress-filter {
+  &.compress-filter.active {
     background-color: #0aa24f;
   }
 
-  &.other-filter {
+  &.other-filter.active {
     background-color: #1d4053;
   }
 }
 
 #main-toolbar {
-  padding: ($cell-margin * 2) 0;
+  // padding: ($cell-margin * 2) 0;
   margin-bottom: $cell-margin * 2;
   color: #ffffff;
 
   button.upload {
-    .fas {
+    svg {
       margin-right: 10px;
     }
   }

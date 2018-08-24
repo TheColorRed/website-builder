@@ -1,5 +1,5 @@
 @import '../variables';
-@import url(https://use.fontawesome.com/releases/v5.2.0/css/all.css);
+// @import url(https://use.fontawesome.com/releases/v5.2.0/css/all.css);
 $primary-nav: #1d4053;
 $secondary-nav: #0aa24f;
 
@@ -42,9 +42,28 @@ nav {
 
 #main-toolbar {
   background-color: lighten($primary-nav, 15);
+  padding: ($cell-margin * 3) $cell-margin;
+  // padding-right: $cell-margin;
 }
 
 #primary-content {
   margin-left: $cell-margin * 2;
   margin-right: $cell-margin * 2;
+}
+
+li {
+  &:not(.active) {
+    .fa-layers {
+      svg:last-child g g path {
+        stroke: $primary-nav;
+      }
+    }
+  }
+
+  .fa-layers {
+    svg:last-child g g path {
+      stroke-width: 40;
+      stroke: $secondary-nav;
+    }
+  }
 }

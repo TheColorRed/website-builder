@@ -8,7 +8,8 @@ html(lang="en")
     link(rel="stylesheet", href="/css/admin.css")
     link(rel="stylesheet", href="/css/themes/default.css")
     link(rel="stylesheet", href="/css/themes/default-admin.css")
-    script(src="/js/main.js")
+    script(src="https://use.fontawesome.com/releases/v5.2.0/js/all.js" defer)
+    script(src="/js/main.js" defer)
     if title
       title #{title} | Admin
     else
@@ -18,13 +19,13 @@ html(lang="en")
       .col-2#main-nav
         include extras/nav
       .col-10.main-content
-        .row.cell-no-margin
+        .fluid.row.cell-no-margin
           .col-12#main-toolbar
-            .fluid
-              .row
-                .col-6
-                .col-6.text-right
-                  button.upload #[i.fas.fa-cloud-upload-alt] Upload
+            .fluid.row
+              .col-6
+              .col-6.text-right
+                button.upload #[i.fas.fa-cloud-upload-alt] Upload
         .row
           .col-12#primary-content
+            include ../../mixins/mixins
             block content

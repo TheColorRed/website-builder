@@ -3,6 +3,7 @@ import { loadInstaller, enforceAjax, adminLogged } from '../middleware'
 import { updateJsonFile } from '../core/fs';
 import { join } from 'path';
 import { emitter, Events } from '../core/Events'
+import { MediaManager } from '../utils';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Webpage routes
@@ -19,7 +20,8 @@ Router.group('/admin', { middleware: [loadInstaller] }, () => require('./web-adm
 // These are files that are not apart of the website builder
 // Things such as movies/images/audio/etc.
 Router.get(/^\/media\/.+/, async (client, mongo) => {
-  let file = await mongo.findFile(client.path)
+  let mediaManager = new MediaManager(mongo)
+  let file = await mediaManager.findFile(client.path)
   if (!file) return client.response.sendErrorPage(404)
   return client.response.setMedia(file)
 })

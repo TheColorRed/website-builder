@@ -5,7 +5,11 @@ nav.main
     li(class=`${route.is('admin-pages', 'active')}`)
       a(href=`${route.name('admin-pages')}`) #[i.fa-lg.fas.fa-fw.fa-code] Pages
     li(class=`${route.in(['admin-media', 'admin-media-file'], 'active')}`)
-      a(href=`${route.name('admin-media')}`) #[i.fa-lg.fas.fa-fw.fa-theater-masks] Media
+      a(href=`${route.name('admin-media')}`)
+        span.fa-layers.fa-fw.fa-lg
+          i.fas.fa-music(data-fa-transform='down-3 right-3')
+          i.fas.fa-camera(data-fa-transform='up-3 left-3')
+        span Media
     li(class=`${route.is('admin-themes', 'active')}`)
       a(href=`${route.name('admin-themes')}`) #[i.fa-lg.fas.fa-fw.fa-palette] Themes
     li(class=`${route.is('admin-components', 'active')}`)

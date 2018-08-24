@@ -47,15 +47,15 @@ export class Client {
   public get data() {
     let $this = this
     return {
-      get(key: string, defaultValue: string = ''): string {
+      get<T extends any>(key: string, defaultValue: any = ''): T {
         if ($this._get[key]) return $this._get[key]
         else return defaultValue
       },
-      post(key: string, defaultValue: string = ''): string {
+      post<T extends any>(key: string, defaultValue: any = ''): T {
         if ($this._post[key]) return $this._post[key]
         return defaultValue
       },
-      request(key: string, defaultValue: string = ''): string {
+      request<T extends any>(key: string, defaultValue: any = ''): T {
         if ($this._get[key]) return $this._get[key]
         else if ($this._post[key]) return $this._post[key]
         else return defaultValue

@@ -1,5 +1,6 @@
 import { GridFSBucket, ObjectID } from 'mongodb'
 import * as fs from 'fs'
+import * as mime from 'mime-types'
 import { Mongo, MediaObject } from '../core';
 
 export interface MediaFile {
@@ -33,8 +34,14 @@ export class MediaManager {
   public async saveFile(sourcePath: string, filePath: string) {
     return new Promise(resolve => {
       let grid = new GridFSBucket(this.mongo.db)
+      let mimeType = mime.lookup(filePath) || ''
       fs.createReadStream(sourcePath)
-        .pipe(grid.openUploadStream(filePath))
+        .pipe(grid.openUploadStream(filePath, {
+          metadata: {
+            mime: mimeType,
+            type: mimeType.split('/')[1] || 'unknown'
+          }
+        }))
         .on('error', () => resolve(false))
         .on('finish', () => {
           resolve(true)
@@ -54,19 +61,27 @@ export class MediaManager {
 
   public async moveToTrash(id: ObjectID) {
     let item = await this.mongo.select('fs.files', { _id: id }, 1)
-    if (!item) return
+    if (!item) return false
     let ttl = new Date()
     let chunks = await this.mongo.select<{ _id: ObjectID }>('fs.chunks', { files_id: id })
+    let bulk = this.mongo.db.collection('trash').initializeUnorderedBulkOp()
     if (await chunks.count() > 0) {
       let chunk = await chunks.next()
+      let ids: ObjectID[] = []
       while (chunk) {
-        await this.mongo.insert('trash', { collection: 'fs.chunks', ttl, data: chunk })
-        await this.mongo.delete('fs.chunks', { _id: chunk._id })
+        bulk.insert({ collection: 'fs.chunks', ttl, data: chunk })
+        ids.push(chunk._id)
         chunk = await chunks.next()
       }
-      await this.mongo.insert('trash', { collection: 'fs.files', ttl, data: item })
-      await this.mongo.delete('fs.files', { _id: id }, 1)
+      let ok = !!(await bulk.execute()).ok
+      if (ok) {
+        await this.mongo.delete('fs.chunks', { _id: { $in: ids } })
+        await this.mongo.insert('trash', { collection: 'fs.files', ttl, data: item })
+        await this.mongo.delete('fs.files', { _id: id }, 1)
+      }
+      return ok
     }
+    return false
   }
 
   public async restoreFromTrash(id: ObjectID) {
@@ -78,12 +93,25 @@ export class MediaManager {
       }]
     })
     if (await items.count() > 0) {
+      let bulkChunks = this.mongo.db.collection('fs.chunks').initializeUnorderedBulkOp()
+      let ids: ObjectID[] = []
       let item = await items.next()
       while (item) {
-        await this.mongo.insert(item.collection, item.data)
-        await this.mongo.delete('trash', { _id: item._id })
+        if (item.collection == 'fs.chunks') {
+          bulkChunks.insert(item.data)
+          ids.push(item._id)
+        } else {
+          await this.mongo.insert(item.collection, item.data)
+          await this.mongo.delete('trash', { _id: item._id })
+        }
         item = await items.next()
       }
+      let ok = !!(await bulkChunks.execute()).ok
+      if (ok) {
+        await this.mongo.delete('trash', { _id: { $in: ids } })
+      }
+      return ok
     }
+    return false
   }
 }

@@ -17,6 +17,8 @@ nav {
         display: block;
         padding: 10px;
 
+        & > svg,
+        & > .fa-layers,
         & > .fas,
         & > .far {
           margin-right: 16px;

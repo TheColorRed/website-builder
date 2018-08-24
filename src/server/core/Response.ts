@@ -74,7 +74,11 @@ export class Response {
     return this.setHeader('Content-Type', contentType).setContentLength(data.length)
   }
 
-  public render(path: string, options: Options & LocalsObject = {}) {
+  public render(section: string, page: string, options: Options & LocalsObject = {}) {
+    return this.renderFile(`/pages/${section}/pages/${page}`, options)
+  }
+
+  public renderFile(path: string, options: Options & LocalsObject = {}) {
     try {
       path = path.startsWith('/') ? path.replace(/^\//g, '') : path
       path = path.endsWith('.pug') ? path : path + '.pug'

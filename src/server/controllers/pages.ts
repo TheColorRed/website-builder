@@ -14,7 +14,7 @@ export async function page(client: Client, mongo: Mongo) {
     data: client.data.toObject(),
     params: client.route.params
   })
-  return client.response.render('/pages/main', page)
+  return client.response.render('public', 'main', page)
 }
 
 export async function save(client: Client, mongo: Mongo) {

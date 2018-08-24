@@ -4,7 +4,8 @@
 }
 
 .fluid {
-  & > .row {
+  & > .row,
+  &.row {
     .col:first-child {
       margin-left: 0;
     }

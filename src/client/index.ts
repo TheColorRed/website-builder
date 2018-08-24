@@ -38,7 +38,7 @@ namespace builder {
       let [key, value] = i
       obj[key] = typeof value == 'string' ? value.trim() : value
     })
-    await send(el.action, obj, el.method as formMethod)
+    return await send(el.action, obj, el.method as formMethod)
     // let response = await fetch(el.action, {
     //   method: el.method,
     //   body: JSON.stringify(obj),

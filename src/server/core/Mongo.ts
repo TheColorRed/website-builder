@@ -1,5 +1,5 @@
 import * as fs from 'fs'
-import { MongoClient, Db, FilterQuery, FindOneOptions, Cursor, IndexOptions, GridFSBucket, ObjectID } from 'mongodb'
+import { MongoClient, Db, FilterQuery, FindOneOptions, Cursor, IndexOptions, GridFSBucket, ObjectID, InsertOneWriteOpResult, InsertWriteOpResult } from 'mongodb'
 import { element, RootElement } from './Dom/Element'
 import { MediaObject } from './Response';
 
@@ -175,7 +175,9 @@ export class Mongo {
    * @returns
    * @memberof Mongo
    */
-  public async insert<T>(collection: string, data: T | T[]) {
+  public async insert<T>(collection: string, data: T): Promise<InsertOneWriteOpResult>
+  public async insert<T>(collection: string, data: T[]): Promise<InsertWriteOpResult>
+  public async insert<T>(collection: string, data: T | T[]): Promise<InsertOneWriteOpResult | InsertWriteOpResult | void> {
     let table = this.database.collection(collection)
     if (Array.isArray(data)) {
       return await table.insertMany(data)
