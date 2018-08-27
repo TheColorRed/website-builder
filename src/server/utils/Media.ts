@@ -1,31 +1,8 @@
 import { GridFSBucket, ObjectID } from 'mongodb'
 import * as fs from 'fs'
 import * as mime from 'mime-types'
-import { Mongo, MediaObject } from '../core';
-
-export interface MediaFile {
-  _id: ObjectID
-  length: number
-  chunkSize: number
-  uploadDate: Date
-  filename: string
-  md5: string
-}
-
-export interface MediaChunk {
-  _id: ObjectID
-  files_id: ObjectID
-  n: number
-  data: any
-}
-
-export interface MediaTrash {
-  _id: ObjectID
-  collection: string
-  ttl: Date
-  restore_id: ObjectID
-  data: MediaFile | MediaChunk
-}
+import { Mongo } from '../core';
+import { MediaObject, MediaTrash } from '../models';
 
 export class MediaManager {
 

@@ -1,7 +1,6 @@
-import * as fs from 'fs'
-import { MongoClient, Db, FilterQuery, FindOneOptions, Cursor, IndexOptions, GridFSBucket, ObjectID, InsertOneWriteOpResult, InsertWriteOpResult, AggregationCursor } from 'mongodb'
-import { element, RootElement } from './Dom/Element'
-import { MediaObject } from './Response';
+import { MongoClient, Db, FilterQuery, FindOneOptions, Cursor, IndexOptions, InsertOneWriteOpResult, InsertWriteOpResult, AggregationCursor } from 'mongodb'
+import { element } from './Dom/Element'
+import { Setting, Page } from '../models';
 
 export interface MongoConnectionInfo {
   hostname: string
@@ -11,22 +10,41 @@ export interface MongoConnectionInfo {
   password?: string
 }
 
-export interface Setting {
-  _id?: any
-  key: string
-  value: any
-}
-
-export interface Page {
-  path: string
-  document: RootElement
-}
-
 export let mongoClient: Mongo
 
 export function setClient(client: Mongo) {
   mongoClient = client
 }
+
+declare type aggregationPipeline = {
+  $addFields?: {}
+  $bucket?: {}
+  $bucketAuto?: {}
+  $collStats?: {}
+  $count?: {}
+  $currentOp?: {}
+  $facet?: {}
+  $geoNear?: {}
+  $graphLookup?: {}
+  $group?: {}
+  $indexStats?: {}
+  $limit?: {}
+  $listLocalSessions?: {}
+  $listSessions?: {}
+  $lookup?: {}
+  $match?: {}
+  $out?: {}
+  $project?: {}
+  $redact?: {}
+  $replaceRoot?: {}
+  $sample?: {}
+  $skip?: {}
+  $sort?: {}
+  $sortByCount?: {}
+  $unwind?: {}
+}
+
+declare type queryType = FilterQuery<any> | aggregationPipeline[]
 
 export class Mongo {
 
@@ -65,14 +83,22 @@ export class Mongo {
     this.database = this.client.db(connection.database)
   }
 
+  /**
+   * Selects all items from the collection.
+   *
+   * @template T
+   * @param {string} collection The collection to select from.
+   * @returns {Promise<Cursor<T>>}
+   * @memberof Mongo
+   */
   public async select<T extends any>(collection: string): Promise<Cursor<T>>
 
   /**
    * Selects unlimited items from the database
    *
    * @template T
-   * @param {string} collection The collection to select from
-   * @param {FilterQuery<any>} query The query filter
+   * @param {string} collection The collection to select from.
+   * @param {FilterQuery<any>} query The query filter.
    * @returns {(Promise<T>)}
    * @memberof Mongo
    */
@@ -114,10 +140,11 @@ export class Mongo {
    * @memberof Mongo
    */
   public async select<T extends any>(collection: string, query: FilterQuery<T>, options: FindOneOptions, limit: number): Promise<Cursor<T>>
-  public async select<T extends any>(...args: any[]): Promise<T | Cursor<T>> {
+  public async select<T extends any>(...args: any[]): Promise<T | Cursor<T> | AggregationCursor<T>> {
+
     // Set param defaults
     let collection = args[0] as string
-    let query = args.length == 1 ? {} : args[1] as FilterQuery<any>
+    let query: queryType = args.length == 1 ? {} : args[1] as FilterQuery<any>
     let limit = -1
     let options: FindOneOptions | undefined = args.length == 2 ? args[2] : {}
     let table = this.database.collection(collection)
@@ -126,15 +153,30 @@ export class Mongo {
     else if (args.length == 4) limit = parseInt(args[3])
     if (options && limit > 0) options.limit = limit
 
-    if (limit == 1) {
-      return await table.findOne(query, options)
-    }
+    // Find one
+    if (limit == 1) return await table.findOne(query, options)
+    // Find many
     return await table.find<T>(query, options)
   }
 
-  public async aggregate<T>(collection: string, pipeline: Object[]): Promise<AggregationCursor<T>> {
+  /**
+   * Selects from the database using the aggregation pipeline.
+   *
+   * @template T
+   * @param {string} collection The collection to select from.
+   * @param {object[]} pipeline The aggregation pipeline.
+   * @returns {Promise<AggregationCursor<T>>}
+   * @memberof Mongo
+   */
+  public async aggregate<T extends any>(collection: string, pipeline: aggregationPipeline[]): Promise<AggregationCursor<T>> {
     let table = this.database.collection(collection)
-    return await table.aggregate(pipeline)
+    return await table.aggregate<T>(pipeline)
+  }
+
+  public sanitize(item: string | string[]) {
+    let regexp = /^\$/
+    if (Array.isArray(item)) return item.map(i => i.replace(regexp, ''))
+    return item.replace(regexp, '')
   }
 
   /**

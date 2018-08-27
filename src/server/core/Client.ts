@@ -46,14 +46,14 @@ export class Client {
         if (item.trim().toLowerCase().startsWith('content-disposition')) {
           item = item.trim()
           let result = item.split(':')[1].split(';').map(i => i.trim()).reduce((obj, itm) => {
-            if (itm.startsWith('name=')) obj.name = itm.match(/^name="(.+)"/)[1]
-            if (itm.startsWith('filename=')) obj.filename = itm.match(/^filename="(.+)"/)[1]
+            if (itm.startsWith('name=')) obj.name = (itm.match(/^name="(.+)"/) || [''])[1]
+            if (itm.startsWith('filename=')) obj.filename = (itm.match(/^filename="(.+)"/) || [''])[1]
             return obj
           }, { name: '', filename: '' })
           if (result.filename.length > 0) {
             let temp = join(os.tmpdir(), 'builder-' + (Math.random() * 10000).toString(12).substr(5, 10))
-            let matches = item.match(/^.+?(\r\n\r\n|\n\n)(.+)/s)
-            fs.createWriteStream(temp).write(matches[2], 'binary')
+            let [full, file] = Array.from(item.match(/^.+?(\r\n\r\n|\n\n)(.+)/s) || [])
+            fs.createWriteStream(temp).write(file, 'binary')
             this._files.push({
               key: result.name,
               filename: result.filename,

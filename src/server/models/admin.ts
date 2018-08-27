@@ -1,4 +1,5 @@
 import { CookieSerializeOptions } from 'cookie'
+import { RootElement } from '../core'
 
 export interface AdminModel {
   user: string
@@ -19,4 +20,15 @@ export interface AdminSessionModel {
     hits: number
   }[]
   data: { [key: string]: any }
+}
+
+export interface Setting {
+  _id?: any
+  key: string
+  value: any
+}
+
+export interface Page {
+  path: string
+  document: RootElement
 }

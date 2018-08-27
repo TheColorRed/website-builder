@@ -6,20 +6,7 @@ import { Router } from './Router'
 import { ObjectID } from 'mongodb'
 import { Client } from './Client';
 import { unixJoin } from './fs';
-
-export interface MediaObject {
-  _id: string
-  length: number
-  chunkSize: number
-  uploadDate: string
-  filename: string
-  md5: string
-  metadata: {
-    mime: string
-    type: string
-    ext: string
-  }
-}
+import { MediaObject } from '../models';
 
 export class Response {
 

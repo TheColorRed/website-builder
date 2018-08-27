@@ -1,12 +1,13 @@
 import { Client, Mongo } from '../../core'
-import { MediaManager } from '../../utils';
-import { unixJoin } from '../../core/fs';
+import { MediaManager } from '../../utils'
+import { unixJoin } from '../../core/fs'
+import { MediaObject } from '../../models'
 
 export async function files(client: Client, mongo: Mongo) {
-  let files = await mongo.aggregate('fs.files', [
+  let files = await mongo.aggregate<MediaObject>('fs.files', [
     { $sort: { uploadDate: -1 } },
     { $group: { _id: '$filename', id: { $first: '$_id' }, size: { $sum: '$length' }, files: { $sum: 1 } } },
-    { $project: { _id: '$id', filename: '$_id', size: '$size', files: '$files' } },
+    { $addFields: { _id: '$id', filename: '$_id' } },
     { $sort: { filename: 1 } }
   ])
   return client.response.render('admin', 'media', {
@@ -17,8 +18,8 @@ export async function files(client: Client, mongo: Mongo) {
 }
 
 export async function file(client: Client, mongo: Mongo) {
-  let files = await mongo.aggregate('fs.files', [
-    { $match: { filename: client.data.get('file') } },
+  let files = await mongo.aggregate<MediaObject>('fs.files', [
+    { $match: { filename: mongo.sanitize(client.data.get('file')) } },
     { $sort: { uploadDate: -1 } }
   ])
   return client.response.render('admin', 'media', {
@@ -29,12 +30,12 @@ export async function file(client: Client, mongo: Mongo) {
 }
 
 export async function filter(client: Client, mongo: Mongo) {
-  let filter = client.data.post<string[]>('filter')
-  let files = await mongo.aggregate('fs.files', [
+  let files = await mongo.aggregate<MediaObject>('fs.files', [
     { $sort: { uploadDate: -1 } },
-    { $match: { 'metadata.type': { $in: filter } } },
-    { $group: { _id: '$filename', id: { $first: '$_id' }, size: { $sum: '$length' }, files: { $sum: 1 } } },
-    { $project: { _id: '$id', filename: '$_id', size: '$size', files: '$files' } }
+    { $match: { 'metadata.type': { $in: mongo.sanitize(client.data.post<string[]>('filter')) } } },
+    { $group: { _id: '$filename', id: { $first: '$_id' }, size: { $sum: '$length' }, files: { $sum: 1 }, metadata: '$metadata', uploadDate: '$uploadDate' } },
+    { $addFields: { _id: '$id', filename: '$_id' } },
+    { $project: { id: 0 } }
   ])
   return client.response.json(await files.toArray())
 }
