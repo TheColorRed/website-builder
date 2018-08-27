@@ -19,12 +19,12 @@ html(lang="en")
       .col-2#main-nav
         include extras/nav
       .col-10.main-content
-        .fluid.row.cell-no-margin
-          .col-12#main-toolbar
+        .fluid.row.cell-no-margin#main-toolbar
+          .col-12
             .fluid.row
               .col-6
               .col-6.text-right
-                button.upload #[i.fas.fa-cloud-upload-alt] Upload
+                a(href=`${route.name('admin-upload')}`).btn.upload #[i.fas.fa-cloud-upload-alt] Upload
         .row
           .col-12#primary-content
             include ../../mixins/mixins

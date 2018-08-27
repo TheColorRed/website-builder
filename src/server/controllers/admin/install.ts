@@ -60,11 +60,11 @@ export async function main(client: Client) {
 
 async function connect(client: Client) {
   // Get the database information
-  let dbHostname = client.data.post('db-hostname')
-  let dbPortNumber = client.data.post('db-port-number')
-  let dbDatabase = client.data.post('db-database')
-  let dbUsername = client.data.post('db-username')
-  let dbPassword = client.data.post('db-password')
+  let dbHostname = client.data.post<string>('db-hostname')
+  let dbPortNumber = client.data.post<string>('db-port-number')
+  let dbDatabase = client.data.post<string>('db-database')
+  let dbUsername = client.data.post<string>('db-username')
+  let dbPassword = client.data.post<string>('db-password')
 
   let connection = {
     hostname: dbHostname,
@@ -146,8 +146,9 @@ export async function createHomePage(mongo: Mongo) {
     children: [
       'h1 {{settings.website-title}}',
       {
-        tag: 'video[style="height:90vh;max-width:100%"]#videoPlayer:autoplay',
-        children: 'source[src=/media/bbb.mp4][type=video/mp4]'
+        tag: 'img[src=/media/boobs.png]'
+        // tag: 'video[style="height:90vh;max-width:100%"]#videoPlayer:autoplay',
+        // children: 'source[src=/media/bbb.mp4][type=video/mp4]'
       }
     ]
   }

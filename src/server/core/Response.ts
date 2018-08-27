@@ -14,6 +14,11 @@ export interface MediaObject {
   uploadDate: string
   filename: string
   md5: string
+  metadata: {
+    mime: string
+    type: string
+    ext: string
+  }
 }
 
 export class Response {

@@ -1,10 +1,19 @@
 import { parse } from 'url'
+import { join } from 'path'
+import * as os from 'os'
+import * as fs from 'fs'
 import * as querystring from 'querystring'
 import { IncomingMessage, IncomingHttpHeaders } from 'http'
 import { AppStatus } from '.'
 import { Route } from './Router';
 import { Session } from './Session';
 import { Response } from './Response';
+
+export interface FileType {
+  key: string
+  filename: string
+  tmpFilename: string
+}
 
 export class Client {
 
@@ -15,6 +24,7 @@ export class Client {
 
   private readonly _post: any
   private readonly _get: any
+  private readonly _files: FileType[] = []
   private readonly _headers: IncomingHttpHeaders
   private readonly _response: Response
 
@@ -28,10 +38,39 @@ export class Client {
     this.session = new Session(req, this)
     this._response = new Response(this)
     this._headers = req.headers
-    try {
-      this._post = JSON.parse(body)
-    } catch (e) {
-      this._post = body
+    let contentType = this.headers.get<string>('content-type')
+    if (contentType.includes('boundary=')) {
+      let [type, boundary] = contentType.split('boundary=')
+      this._post = {}
+      body.split(new RegExp(`(--${boundary}|--${boundary}--)`)).forEach(item => {
+        if (item.trim().toLowerCase().startsWith('content-disposition')) {
+          item = item.trim()
+          let result = item.split(':')[1].split(';').map(i => i.trim()).reduce((obj, itm) => {
+            if (itm.startsWith('name=')) obj.name = itm.match(/^name="(.+)"/)[1]
+            if (itm.startsWith('filename=')) obj.filename = itm.match(/^filename="(.+)"/)[1]
+            return obj
+          }, { name: '', filename: '' })
+          if (result.filename.length > 0) {
+            let temp = join(os.tmpdir(), 'builder-' + (Math.random() * 10000).toString(12).substr(5, 10))
+            let matches = item.match(/^.+?(\r\n\r\n|\n\n)(.+)/s)
+            fs.createWriteStream(temp).write(matches[2], 'binary')
+            this._files.push({
+              key: result.name,
+              filename: result.filename,
+              tmpFilename: temp
+            })
+          } else {
+            this._post[result.name] = item.split(/\r\n\r\n|\n\n/)[1]
+          }
+        }
+      })
+      console.log(this._files, this._post)
+    } else {
+      try {
+        this._post = JSON.parse(body)
+      } catch (e) {
+        this._post = body
+      }
     }
   }
 
@@ -47,6 +86,9 @@ export class Client {
   public get data() {
     let $this = this
     return {
+      files(key: string) {
+        return ($this._files.find(i => i.key == key))
+      },
       get<T extends any>(key: string, defaultValue: any = ''): T {
         if ($this._get[key]) return $this._get[key]
         else return defaultValue
@@ -72,9 +114,14 @@ export class Client {
   public get headers() {
     let $this = this
     return {
-      get(key: string, defaultValue: any = '') {
-        let header = $this._headers[key]
+      get<T>(key: string, defaultValue: any = ''): T {
+        let header = $this._headers[key.toLowerCase()]
         return header || defaultValue
+      },
+      is(key: string, value?: any) {
+        let v = this.get(key)
+        if (v && value) return v == value
+        return !!v
       },
       all() {
         return $this._headers

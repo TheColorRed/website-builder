@@ -1,0 +1,17 @@
+extends ../main
+
+block content
+  .fluid.well
+    form.upload-drag-drop.ajax(action=`${route.name('api-admin-upload-media')}` method='post' enctype='multipart/form-data')
+      .fluid.row
+        .col-8.col-2-offset
+          .row.cell-no-margin
+            .col-2.middle.text-right.gray /media
+            .col-10: input(type="text" name="path" value="/")
+      label.file-group.row.margin-bottom-15
+        input(type='file' name='file' id='file' multiple)
+        .row: .col-12: .upload-preview.center.vertical
+          div.preview-info.margin-bottom-20: i.fas.fa-cloud-upload-alt.fa-10x
+          div.preview-info(style="font-size:2rem;") #[strong Choose a file] or drag it here
+          div.preview.hidden
+        //- .row.margin-top-15.hidden.upload-row: .col-12.center: input(type='submit' value='Upload')

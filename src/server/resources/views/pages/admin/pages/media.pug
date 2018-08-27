@@ -6,7 +6,7 @@ block content
     const FILTER_URL = '#{route.name("api-admin-filter-media")}'
   .well
     .fluid.row
-      h1.col-6.no-margin #{page == 'file-details' ? ' ' + get('file') : 'Media Files'}
+      h1.col-6.no-margin.overflow-ellipsis #{page == 'file-details' ? ' ' + get('file') : 'Media Files'}
       h1.col-6.text-right #{page == 'file-details' ? ' ' + mime(get('file')) : ''}
   if page == 'file-list'
     .fluid.row
@@ -24,26 +24,36 @@ block content
         span.col-2 File Size
     if page == 'file-list' && files.length > 0
       p.fluid.row.text-bold
-        span.col-2 Filename
+        span.col-1.text-center Actions
+        span.col-3 Filename
         span.col-2 Number of Files
         span.col-2 Size of Files
     - var c = 0
     each i in files
       if page == 'file-list'
-        .fluid.row
-          .col-2: a(href=`${route.name('admin-media-file')}?file=${i.filename}`)= i.filename
+        .fluid.row(data-file=`${i.filename}`)
+          span.col-1.text-center
+            span.margin-right-5
+              a(title="Move to trash" href='').trash-delete.red-text: i.fa-lg.fa-fw.far.fa-trash-alt
+              span.spinner.hidden: i.fa-lg.fa-fw.fas.fa-spin.fa-sync
+            span
+              a(href=`${i.filename}` target='_blank'): i.fa-lg.fa-fw.far.fa-eye
+          .col-3.overflow-ellipsis: a(href=`${route.name('admin-media-file')}?file=${i.filename}` title=`${i.filename}`)= i.filename
           .col-2= i.files
           .col-2: +bytesToSize(i.size)
       else if page == 'file-details'
         p.fluid.row(data-id=`${i._id}`)
           span.col-1.text-center
-            a(title="Move to trash" href="").trash-delete.red-text: i.fa-lg.far.fa-trash-alt
-            span.spinner.hidden: i.fa-lg.fas.fa-spin.fa-sync
+            span.margin-right-5
+              a(title="Move to trash" href='').trash-delete.red-text: i.fa-lg.fa-fw.far.fa-trash-alt
+              span.spinner.hidden: i.fa-lg.fa-fw.fas.fa-spin.fa-sync
+            span
+              a(href=`${i.filename}` target='_blank'): i.fa-lg.fa-fw.far.fa-eye
           span.col-1.text-center
             if c == 0
               span.label.label-info current
           span.col-2= new Date(i.uploadDate).toLocaleString('en-US')
-          span.col-2: span(title=`${String(i.size).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} Bytes`): +bytesToSize(i.size)
+          span.col-2: span(title=`${String(i.length).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} Bytes`): +bytesToSize(i.length)
       - c++
     else
       div No media files have been uploaded

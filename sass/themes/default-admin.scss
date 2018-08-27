@@ -9,6 +9,9 @@ $secondary-nav: #0aa24f;
 
 nav {
   ul {
+    position: sticky;
+    top: 0;
+
     li.active {
       a {
         background-color: $secondary-nav;
@@ -43,7 +46,8 @@ nav {
 #main-toolbar {
   background-color: lighten($primary-nav, 15);
   padding: ($cell-margin * 3) $cell-margin;
-  // padding-right: $cell-margin;
+  position: sticky;
+  top: 0;
 }
 
 #primary-content {

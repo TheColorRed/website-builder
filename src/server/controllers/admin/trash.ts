@@ -12,7 +12,7 @@ export async function main(client: Client, mongo: Mongo) {
 }
 
 export async function moveToTrash(client: Client, mongo: Mongo) {
-  let id = client.data.post('id')
+  let id = client.data.post<string>('id')
   if (!id) return client.response.json({ error: true, message: 'Invalid id' })
   let media = new MediaManager(mongo)
   let ok = await media.moveToTrash(new ObjectID(id))
@@ -20,7 +20,7 @@ export async function moveToTrash(client: Client, mongo: Mongo) {
 }
 
 export async function restoreFromTrash(client: Client, mongo: Mongo) {
-  let id = client.data.post('id')
+  let id = client.data.post<string>('id')
   if (!id) return client.response.json({ error: true, message: 'Invalid id' })
   let media = new MediaManager(mongo)
   let ok = await media.restoreFromTrash(new ObjectID(id))

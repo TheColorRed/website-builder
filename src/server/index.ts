@@ -47,9 +47,9 @@ let server = http.createServer((req, res) => {
     } else if (response.media) {
       let grid = new GridFSBucket(mongoClient.db)
       grid.openDownloadStream(new ObjectID(response.media._id), { start, end })
-        .on('data', (chunk) => res.write(chunk))
+        .on('data', (chunk: any) => res.write(chunk))
         .on('end', () => res.end())
-        .on('error', err => res.end(err))
+        .on('error', (err: any) => res.end(err))
     } else {
       res.write(response.body)
       res.end()
@@ -59,13 +59,14 @@ let server = http.createServer((req, res) => {
   let body = ''
   req
     // Build the body
-    .on('data', data => {
-      body += data
+    .on('data', (data: Buffer) => {
+      body += data.toString('binary')
       // Kill the request if it is larger than 2000000 bytes (approximately 2MB)
       if (body.length > 2e6) req.connection.destroy()
     })
     // Once all the data has been received start responding to the request
-    .on('end', async () => {
+    .on('end', async (data: Buffer) => {
+      if (data) body += data.toString('binary')
       // Create a new client
       let client = new Client(req, body, appStatus)
 
@@ -87,7 +88,7 @@ let server = http.createServer((req, res) => {
       let resp = await Router.route(urlInfo, client, mongoClient)
       await client.session.close()
       if (!resp) send(client.response.sendErrorPage(404))
-      else send(resp.setHeader('Content-Type', 'text/html'))
+      else send(resp)
     })
 }).listen(APP_PORT, async () => {
   console.log('Started listening on port ' + APP_PORT)

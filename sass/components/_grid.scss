@@ -46,6 +46,10 @@
   }
 }
 
+.vertical {
+  flex-direction: column;
+}
+
 .row {
   display: flex;
   flex-flow: row wrap;
@@ -92,6 +96,12 @@
     display: flex;
   }
 
+  .middle {
+    align-items: center;
+    align-content: center;
+    display: flex;
+  }
+
   // &:first-child {
   //   padding-top: $grid-padding;
   // }
@@ -124,7 +134,7 @@
     }
 
     & > .col-#{$i}-offset {
-      margin-left: $i / $grid-columns * 100%;
+      margin-left: $i / $grid-columns * 100% !important;
     }
   }
 

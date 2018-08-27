@@ -1,5 +1,5 @@
 import * as fs from 'fs'
-import { MongoClient, Db, FilterQuery, FindOneOptions, Cursor, IndexOptions, GridFSBucket, ObjectID, InsertOneWriteOpResult, InsertWriteOpResult } from 'mongodb'
+import { MongoClient, Db, FilterQuery, FindOneOptions, Cursor, IndexOptions, GridFSBucket, ObjectID, InsertOneWriteOpResult, InsertWriteOpResult, AggregationCursor } from 'mongodb'
 import { element, RootElement } from './Dom/Element'
 import { MediaObject } from './Response';
 
@@ -132,7 +132,7 @@ export class Mongo {
     return await table.find<T>(query, options)
   }
 
-  public async aggregate(collection: string, pipeline: Object[]) {
+  public async aggregate<T>(collection: string, pipeline: Object[]): Promise<AggregationCursor<T>> {
     let table = this.database.collection(collection)
     return await table.aggregate(pipeline)
   }

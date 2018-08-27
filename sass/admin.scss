@@ -50,7 +50,7 @@ h6 {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 .media-filter {
@@ -87,14 +87,42 @@ h6 {
   }
 }
 
+.upload-drag-drop {
+  border: solid 5px transparent;
+
+  &.is-dragover {
+    border: dashed 5px darken(#ffffff, 20);
+    background: darken(#ffffff, 10);
+  }
+}
+
 #main-toolbar {
   // padding: ($cell-margin * 2) 0;
   margin-bottom: $cell-margin * 2;
   color: #ffffff;
 
-  button.upload {
+  button.upload,
+  .btn.upload {
     svg {
       margin-right: 10px;
+    }
+  }
+}
+
+.overflow-ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.upload-preview {
+  height: 60vh;
+
+  .preview {
+    height: inherit;
+
+    img {
+      height: inherit;
     }
   }
 }

@@ -4,7 +4,7 @@ nav.main
       a(href=`${route.name('admin-home')}`) #[i.fa-lg.fas.fa-fw.fa-home] Home
     li(class=`${route.is('admin-pages', 'active')}`)
       a(href=`${route.name('admin-pages')}`) #[i.fa-lg.fas.fa-fw.fa-code] Pages
-    li(class=`${route.in(['admin-media', 'admin-media-file'], 'active')}`)
+    li(class=`${route.in(['admin-media', 'admin-media-file', 'admin-upload'], 'active')}`)
       a(href=`${route.name('admin-media')}`)
         span.fa-layers.fa-fw.fa-lg
           i.fas.fa-music(data-fa-transform='down-3 right-3')

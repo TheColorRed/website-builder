@@ -1,6 +1,6 @@
 namespace builder {
 
-  declare type formMethod = 'get' | 'post'
+  export declare type formMethod = 'get' | 'post'
 
   export function toKeyValue(inputs: NodeListOf<HTMLInputElement>) {
     return Array.from(inputs).reduce<{ [key: string]: string }>((obj, itm) => {
@@ -9,36 +9,72 @@ namespace builder {
     }, {})
   }
 
-  export async function send(url: string, data: { [key: string]: any } = {}, method: formMethod = 'get') {
+  export async function send(form: HTMLFormElement): Promise<any>
+  export async function send(form: HTMLFormElement, data: { [key: string]: any } | FormData): Promise<any>
+  export async function send(url: string, data: { [key: string]: any } | FormData, method: formMethod): Promise<any>
+  export async function send(...args: any[]): Promise<any> {
+    let url = ''
+    let data = {}
+    let method: formMethod = args.length == 1 ? args[0].method :
+      args.length == 2 ? args[0].method :
+        args.length == 3 ? args[2] : 'get'
     let options: RequestInit = { method }
-    if (method == 'post' && Object.keys(data).length > 0) options.body = JSON.stringify(data)
-    else if (method == 'get' && Object.keys(data).length > 0) {
-      url += '?' + (Object.keys(data).map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))).join('&')
+    options.headers = { 'X-Requested-With': 'XMLHttpRequest' }
+    if (args.length == 1) {
+      url = args[0].action
+      data = new FormData(args[0])
+    } else if (args.length == 2 || args.length == 3) {
+      url = args[0] instanceof HTMLFormElement ? args[0].action : args[0]
+      data = args[1]
     }
+
+    if (method == 'get') {
+      if (data instanceof FormData) {
+        let str = Array.from(data.entries()).map(([k, v]) =>
+          encodeURIComponent(k) + '=' + encodeURIComponent(v.toString())).join('&')
+        if (str.length > 0) url += '?' + str
+      } else if (data instanceof Object) {
+        let str: string[] = []
+        for (let k in data) {
+          let v = (<any>data)[k]
+          str.push(encodeURIComponent(k) + '=' + encodeURIComponent(v.toString()))
+        }
+        if (str.length > 0) url += '?' + str.join('&')
+      }
+    } else {
+      if (data instanceof FormData) {
+        options.body = data
+      } else {
+        try {
+          options.body = JSON.stringify(data)
+        } catch (e) {
+          options.body = ''
+        }
+      }
+    }
+
     let csrf = ''
     let csrfMeta = document.querySelector('meta[name=csrf]') as HTMLMetaElement
     if (csrfMeta) csrf = csrfMeta.content
-    options.headers = { 'X-Requested-With': 'XMLHttpRequest' }
     if (csrf.length > 0) options.headers['X-CSRF-Token'] = csrf
-    let response = await fetch(url, options)
-    let text = await response.text()
     try {
-      return JSON.parse(text)
+      let response = await fetch(url, options)
+      let text = await response.text()
+
+      try {
+        return JSON.parse(text)
+      } catch (e) {
+        return text
+      }
     } catch (e) {
-      return text
+      console.error(e.message)
     }
   }
 
   export async function submit(form: HTMLFormElement | string) {
     let el = (typeof form == 'string' ? document.querySelector(form) : form) as HTMLFormElement
     if (!el.reportValidity()) return
-    let data = new FormData(el)
-    let obj: { [key: string]: string | File } = {}
-    Array.from(data.entries()).forEach(i => {
-      let [key, value] = i
-      obj[key] = typeof value == 'string' ? value.trim() : value
-    })
-    return await send(el.action, obj, el.method as formMethod)
+    return await send(el)
     // let response = await fetch(el.action, {
     //   method: el.method,
     //   body: JSON.stringify(obj),
@@ -52,16 +88,14 @@ namespace builder {
     // }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    Array.from(document.querySelectorAll<HTMLFormElement>('form.ajax')).forEach(form => {
-      form.addEventListener('submit', async function (e) {
-        e.preventDefault()
-        let data = await submit(this)
-        if (this.hasAttribute('callback')) {
-          let callback = this.getAttribute('callback') as string
-          (<any>builder)[callback](data)
-        }
-      })
+  Array.from(document.querySelectorAll<HTMLFormElement>('form.ajax')).forEach(form => {
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault()
+      let data = await submit(this)
+      if (this.hasAttribute('callback')) {
+        let callback = this.getAttribute('callback') as string
+        (<any>builder)[callback](data)
+      }
     })
   })
 }

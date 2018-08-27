@@ -1,5 +1,7 @@
 .text-right {
   text-align: right;
+  justify-content: flex-end;
+  justify-items: flex-end;
 }
 
 .text-center {
@@ -12,4 +14,22 @@
 
 .letter-spacing-1px {
   letter-spacing: 1px;
+}
+
+@for $i from 1 to 100 {
+  .margin-bottom-#{$i} {
+    margin-bottom: #{$i}px;
+  }
+
+  .margin-top-#{$i} {
+    margin-top: #{$i}px;
+  }
+
+  .margin-left-#{$i} {
+    margin-left: #{$i}px;
+  }
+
+  .margin-right-#{$i} {
+    margin-right: #{$i}px;
+  }
 }

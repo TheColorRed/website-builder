@@ -19,6 +19,7 @@ input[type=email] {
 input[type=button],
 input[type=submit],
 input[type=rest],
+.btn,
 button {
   padding: 10px 15px;
   outline: none;
@@ -28,6 +29,10 @@ button {
   background: $primary-color;
   border: none;
   color: #ffffff;
+  align-items: center;
+  align-content: center;
+  justify-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 
@@ -37,6 +42,16 @@ button {
 
   &:last-child {
     margin-bottom: 0;
+  }
+}
+
+.file-group {
+  & > span {
+    display: block;
+  }
+
+  &>input[type=file] {
+    display: none;
   }
 }
 
