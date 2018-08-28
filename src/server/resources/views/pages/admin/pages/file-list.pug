@@ -1,0 +1,50 @@
+extends ../media
+
+block media
+  .fluid.row: .col.media-query-filter
+    input(type='text' placeholder='Search')
+    i.fas.fa-search.fa-3x
+  .fluid.row
+    a(href='' data-type='image').col.media-filter.image-filter Images
+    a(href='' data-type='video').col.media-filter.video-filter Videos
+    a(href='' data-type='audio').col.media-filter.audio-filter Audio
+    a(href='' data-type='font').col.media-filter.compress-filter Fonts
+    a(href='' data-type='application').col.media-filter.other-filter Apps
+  .well
+    //- Directories header
+    if directories.length > 0
+      p.fluid.row.text-bold
+        span.col-1.text-center Actions
+        span.col-3 Folder
+
+    //- Directory listing
+    each i in directories
+      p.fluid.row(data-directory=`${i.directory}`)
+        span.col-1.text-center
+          span.margin-right-5
+            a(title="Move to trash" href='').trash-delete.red-text: i.fa-lg.fa-fw.far.fa-trash-alt
+            span.spinner.hidden: i.fa-lg.fa-fw.fas.fa-spin.fa-sync
+        span.col-3.overflow-ellipsis: a(href=`${route.name('admin-media')}?path=${i.directory}` title=`${i.nextDirectory}`)= i.nextDirectory
+
+    //- Files header
+    if files.length > 0
+      p.fluid.row.media-file-head.text-bold
+        span.col-1.text-center Actions
+        span.col-3 Filename
+        span.col-2 Number of Files
+        span.col-2 Size of Files
+
+    //- Files listing
+    each i in files
+      p.fluid.row.media-file(data-filename=`${i.filename}` data-file=`${i.file}` data-type=`${i.metadata.type}`)
+        span.col-1.text-center
+          span.margin-right-5
+            a(title="Move to trash" href='').trash-delete.red-text: i.fa-lg.fa-fw.far.fa-trash-alt
+            span.spinner.hidden: i.fa-lg.fa-fw.fas.fa-spin.fa-sync
+          span
+            a(href=`${i.filename}` target='_blank'): i.fa-lg.fa-fw.far.fa-eye
+        span.col-3.overflow-ellipsis: a(href=`${route.name('admin-media-file')}?file=${i.filename}` title=`${i.filename}`)= i.file
+        span.col-2= i.files
+        span.col-2: +bytesToSize(i.size)
+    //- else
+      div.margin-top-50 No media files have been uploaded here

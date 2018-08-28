@@ -14,6 +14,22 @@
       margin-right: 0;
     }
 
+    @for $i from 1 through 100 {
+      &.row-padding-#{$i} {
+        padding: #{$i}px;
+      }
+
+      &.row-horizontal-padding-#{$i} {
+        padding-left: #{$i}px;
+        padding-right: #{$i}px;
+      }
+
+      &.row-vertical-padding-#{$i} {
+        padding-top: #{$i}px;
+        padding-bottom: #{$i}px;
+      }
+    }
+
     @for $i from 1 through $grid-columns {
       & > .col-#{$i} {
         width: calc(#{$i / $grid-columns * 100%} - #{($cell-margin * 2) - 2});

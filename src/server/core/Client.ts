@@ -52,11 +52,13 @@ export class Client {
           }, { name: '', filename: '' })
           if (result.filename.length > 0) {
             let temp = join(os.tmpdir(), 'builder-' + (Math.random() * 10000).toString(12).substr(5, 10))
-            let [full, file] = Array.from(item.match(/^.+?(\r\n\r\n|\n\n)(.+)/s) || [])
+            let [full, newlines, file] = Array.from(item.match(/^.+?(\r\n\r\n|\n\n)(.+)/s) || [])
+            // fs.createWriteStream(temp + '-a').write(full, 'binary')
             fs.createWriteStream(temp).write(file, 'binary')
             this._files.push({
               key: result.name,
               filename: result.filename,
+              // full: temp + '-a',
               tmpFilename: temp
             })
           } else {

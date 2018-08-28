@@ -1,0 +1,37 @@
+extends ../media
+
+block head
+  .well
+    .fluid.row
+      h1.col-6.no-margin.overflow-ellipsis
+        span.row
+          span.col-1: a(href=`${route.name('admin-media')}?path=${back}`): i.fas.fa-arrow-left
+          span.col-11.middle= get('file')
+      h1.col-6.text-right.middle= mime(get('file'))
+
+block media
+  .well
+    //- File info header
+    if files.length > 0
+      p.fluid.row.text-bold
+        span.col-1.text-center Actions
+        span.col-1.text-center Info
+        span.col-2 Date Uploaded
+        span.col-2 File Size
+
+    //- File listing
+    - var c = 0
+    each i in files
+      p.fluid.row(data-id=`${i._id}`)
+        span.col-1.text-center
+          span.margin-right-5
+            a(title="Move to trash" href='').trash-delete.red-text: i.fa-lg.fa-fw.far.fa-trash-alt
+            span.spinner.hidden: i.fa-lg.fa-fw.fas.fa-spin.fa-sync
+          span
+            a(href=`${i.filename}` target='_blank'): i.fa-lg.fa-fw.far.fa-eye
+        span.col-1.text-center
+          if c == 0
+            span.label.label-info current
+        span.col-2= new Date(i.uploadDate).toLocaleString('en-US')
+        span.col-2: span(title=`${String(i.length).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} Bytes`): +bytesToSize(i.length)
+        - c++

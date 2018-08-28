@@ -26,7 +26,7 @@ let server = http.createServer((req, res) => {
     // If the file is larger than 5,000,000 bytes
     // then send the file in chunks
     if (fileSize > 5e6) {
-      let range = req.headers.range as string
+      let range = (req.headers.range || '') as string
       let positions = range.replace(/bytes=/, '').split('-')
       start = parseInt(positions[0], 10)
       end = positions[1] ? parseInt(positions[1], 10) : fileSize - 1
@@ -47,7 +47,7 @@ let server = http.createServer((req, res) => {
     } else if (response.media) {
       let grid = new GridFSBucket(mongoClient.db)
       grid.openDownloadStream(new ObjectID(response.media._id), { start, end })
-        .on('data', (chunk: any) => res.write(chunk))
+        .on('data', (chunk: string | Buffer) => res.write(chunk))
         .on('end', () => res.end())
         .on('error', (err: any) => res.end(err))
     } else {

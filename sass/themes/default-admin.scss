@@ -39,6 +39,50 @@ nav {
   }
 }
 
+.media-query-filter {
+  background-color: #ffffff;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.2), 0 2px 2px rgba(0, 0, 0, 0.2);
+  margin-bottom: $block-margin-bottom;
+  border-radius: 3px;
+  position: relative;
+
+  svg {
+    position: absolute;
+    top: 0;
+    left: 20px;
+    height: 100%;
+    pointer-events: none;
+
+    & > path {
+      fill: $primary-color;
+      opacity: 0.4;
+    }
+  }
+
+  &:hover,
+  &.active {
+    svg {
+      & > path {
+        opacity: 1;
+      }
+    }
+  }
+
+  input[type=text] {
+    padding: 1rem 2rem;
+    padding-left: 5rem;
+    font-size: 3rem;
+    border: solid 1px transparent;
+    background-color: transparent;
+  }
+}
+
+.row {
+  &.media-file-head {
+    margin-top: 50px;
+  }
+}
+
 #main-nav {
   background-color: $primary-nav;
 }

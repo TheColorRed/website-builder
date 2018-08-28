@@ -173,9 +173,11 @@ export class Mongo {
     return await table.aggregate<T>(pipeline)
   }
 
+  public sanitize(item: string): string
+  public sanitize(item: string[]): string[]
   public sanitize(item: string | string[]) {
     let regexp = /^\$/
-    if (Array.isArray(item)) return item.map(i => i.replace(regexp, ''))
+    if (Array.isArray(item)) return item.map(i => typeof i == 'string' && i.replace(regexp, ''))
     return item.replace(regexp, '')
   }
 

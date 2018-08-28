@@ -2,17 +2,16 @@ import { Client, Mongo } from '../../core'
 import { MediaManager } from '../../utils'
 import { unixJoin } from '../../core/fs'
 import { MediaObject } from '../../models'
+import { directories, files, MediaFilter } from '../../services/Media'
 
-export async function files(client: Client, mongo: Mongo) {
-  let files = await mongo.aggregate<MediaObject>('fs.files', [
-    { $sort: { uploadDate: -1 } },
-    { $group: { _id: '$filename', id: { $first: '$_id' }, size: { $sum: '$length' }, files: { $sum: 1 } } },
-    { $addFields: { _id: '$id', filename: '$_id' } },
-    { $sort: { filename: 1 } }
-  ])
-  return client.response.render('admin', 'media', {
+export async function main(client: Client, mongo: Mongo) {
+  let path = client.data.request<string>('path', '/media')
+  let dir = await directories(mongo, path)
+  let dirFiles = await files(mongo, path)
+  return client.response.render('admin', 'file-list', {
     page: 'file-list',
-    files: await files.toArray(),
+    directories: await dir.toArray(),
+    files: await dirFiles.toArray(),
     title: 'Media File Manager'
   })
 }
@@ -22,22 +21,35 @@ export async function file(client: Client, mongo: Mongo) {
     { $match: { filename: mongo.sanitize(client.data.get('file')) } },
     { $sort: { uploadDate: -1 } }
   ])
-  return client.response.render('admin', 'media', {
+  let crumbs = client.data.get<string>('file').split('/')
+  return client.response.render('admin', 'file-details', {
     page: 'file-details',
     files: await files.toArray(),
-    title: 'Media File'
+    title: 'Media File',
+    back: crumbs.slice(0, crumbs.length - 1).join('/')
   })
 }
 
 export async function filter(client: Client, mongo: Mongo) {
-  let files = await mongo.aggregate<MediaObject>('fs.files', [
-    { $sort: { uploadDate: -1 } },
-    { $match: { 'metadata.type': { $in: mongo.sanitize(client.data.post<string[]>('filter')) } } },
-    { $group: { _id: '$filename', id: { $first: '$_id' }, size: { $sum: '$length' }, files: { $sum: 1 }, metadata: '$metadata', uploadDate: '$uploadDate' } },
-    { $addFields: { _id: '$id', filename: '$_id' } },
-    { $project: { id: 0 } }
-  ])
-  return client.response.json(await files.toArray())
+  let filter = client.data.request<MediaFilter>('filter')
+  let dirFiles = await files(mongo, filter.path, filter)
+  // let files = await mongo.aggregate<MediaObject>('fs.files', [
+  //   { $sort: { uploadDate: -1 } },
+  //   { $match: { 'metadata.type': { $in: mongo.sanitize(client.data.post<string[]>('filter')) } } },
+  //   {
+  //     $group: {
+  //       _id: '$filename',
+  //       id: { $first: '$_id' },
+  //       size: { $sum: '$length' },
+  //       files: { $sum: 1 },
+  //       metadata: { $first: '$metadata' },
+  //       uploadDate: { $first: '$uploadDate' }
+  //     }
+  //   },
+  //   { $addFields: { _id: '$id', filename: '$_id' } },
+  //   { $project: { id: 0 } }
+  // ])
+  return client.response.json(await dirFiles.toArray())
 }
 
 export async function upload(client: Client, mongo: Mongo) {

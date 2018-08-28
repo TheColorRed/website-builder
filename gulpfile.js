@@ -21,9 +21,9 @@ gulp.task('build-server', function () {
   return tsResult.js.pipe(gulp.dest('app'))
 })
 
-gulp.task('copy-resources', function (files) {
-  return gulp.src('src/server/resources/**/*').pipe(gulp.dest('app/resources'))
-})
+// gulp.task('copy-resources', function (files) {
+//   return gulp.src(['src/server/resources/**/*', 'src/server/resources/']).pipe(gulp.dest('app/resources'))
+// })
 
 gulp.task('copy-views', function (files) {
   return gulp.src('src/server/resources/views/**/*').pipe(gulp.dest('app/resources/views'))
@@ -42,9 +42,9 @@ gulp.task('build-sass', function () {
     .on('error', err => console.error(err))
 })
 
-gulp.task('Build', gulp.series('build-server', 'build-client', 'build-sass', 'copy-resources', function () {
+gulp.task('Build', gulp.series('build-server', 'build-client', 'build-sass', function () {
   gulp.watch(['src/server/**/*', '!src/server/{resources,resources/**}'], gulp.series('build-server'))
-  gulp.watch(['src/server/resources/**/*', '!src/server/resources/{views,views/**}'], gulp.series('copy-resources'))
+  // gulp.watch(['src/server/resources/**/*', '!src/server/resources/{views,views/**}'], gulp.series('copy-resources'))
   gulp.watch(['src/server/resources/views/**/*'], gulp.series('copy-views'))
   gulp.watch('src/client/**/*', gulp.series('build-client'))
   gulp.watch('sass/**/*', gulp.series('build-sass'))
