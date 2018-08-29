@@ -1,5 +1,8 @@
 import { Router } from '../core'
 import { adminLogged, startSession } from '../middleware';
+import { MediaManager } from '../utils';
+import { ObjectID } from 'bson';
+import { MediaFile } from '../models';
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Admin web interface
@@ -20,4 +23,11 @@ Router.group('/', { middleware: [startSession, adminLogged] }, () => {
   Router.get('/trash', 'admin/trash').name('admin-trash')
   Router.get('/upload', 'admin/upload').name('admin-upload')
   Router.get('/logout', 'admin@logout').name('admin-logout')
+
+  Router.get('/media/view/:id', async (client, mongo) => {
+    let mediaManager = new MediaManager(mongo)
+    let file = await mediaManager.findFileById(new ObjectID(client.route.params.id))
+    if (!file) return client.response.sendErrorPage(404)
+    return client.response.setMedia(file)
+  })
 })

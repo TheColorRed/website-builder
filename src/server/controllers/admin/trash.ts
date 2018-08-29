@@ -1,9 +1,10 @@
 import { Client, Mongo } from '../../core'
-import { MediaTrash, MediaManager } from '../../utils';
+import { MediaManager } from '../../utils';
 import { ObjectID } from 'bson';
+import { MediaTrash } from '../../models';
 
 export async function main(client: Client, mongo: Mongo) {
-  let files = await mongo.select<MediaTrash>('trash', { collection: 'fs.files' })
+  let files = await mongo.aggregate<MediaTrash>('trash', [{ $match: { collection: 'fs.files' } }, { $sort: { deleteDate: -1 } }])
   return client.response.render('admin', 'trash', {
     page: 'file-details',
     files: await files.toArray(),

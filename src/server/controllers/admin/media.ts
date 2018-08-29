@@ -1,23 +1,31 @@
 import { Client, Mongo } from '../../core'
 import { MediaManager } from '../../utils'
 import { unixJoin } from '../../core/fs'
-import { MediaObject } from '../../models'
+import { MediaFile } from '../../models'
 import { directories, files, MediaFilter } from '../../services/Media'
 
 export async function main(client: Client, mongo: Mongo) {
   let path = client.data.request<string>('path', '/media')
   let dir = await directories(mongo, path)
   let dirFiles = await files(mongo, path)
-  return client.response.render('admin', 'file-list', {
-    page: 'file-list',
+  let result: any = {
     directories: await dir.toArray(),
-    files: await dirFiles.toArray(),
-    title: 'Media File Manager'
-  })
+    files: await dirFiles.toArray()
+  }
+
+  // Return ajax response
+  if (client.ajax) {
+    return client.response.json(result)
+  }
+
+  // Return non-ajax response
+  result.page = 'file-list'
+  result.title = 'Media File Manager'
+  return client.response.render('admin', 'file-list', result)
 }
 
 export async function file(client: Client, mongo: Mongo) {
-  let files = await mongo.aggregate<MediaObject>('fs.files', [
+  let files = await mongo.aggregate<MediaFile>('fs.files', [
     { $match: { filename: mongo.sanitize(client.data.get('file')) } },
     { $sort: { uploadDate: -1 } }
   ])

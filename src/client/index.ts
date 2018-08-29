@@ -9,10 +9,10 @@ namespace builder {
     }, {})
   }
 
-  export async function send(form: HTMLFormElement): Promise<any>
-  export async function send(form: HTMLFormElement, data: { [key: string]: any } | FormData): Promise<any>
-  export async function send(url: string, data: { [key: string]: any } | FormData, method: formMethod): Promise<any>
-  export async function send(...args: any[]): Promise<any> {
+  export async function send<T extends any>(form: HTMLFormElement): Promise<T>
+  export async function send<T extends any>(form: HTMLFormElement, data: { [key: string]: any } | FormData): Promise<T>
+  export async function send<T extends any>(url: string, data: { [key: string]: any } | FormData, method: formMethod): Promise<T>
+  export async function send<T extends any>(...args: any[]): Promise<T> {
     let url = ''
     let data = {}
     let method: formMethod = args.length == 1 ? args[0].method :
@@ -37,7 +37,7 @@ namespace builder {
         let str: string[] = []
         for (let k in data) {
           let v = (<any>data)[k]
-          str.push(encodeURIComponent(k) + '=' + encodeURIComponent(v.toString()))
+          v && str.push(encodeURIComponent(k) + '=' + encodeURIComponent(v.toString()))
         }
         if (str.length > 0) url += '?' + str.join('&')
       }
@@ -58,17 +58,19 @@ namespace builder {
     if (csrfMeta) csrf = csrfMeta.content
     if (csrf.length > 0) options.headers['X-CSRF-Token'] = csrf
     try {
+
       let response = await fetch(url, options)
       let text = await response.text()
 
       try {
-        return JSON.parse(text)
+        return JSON.parse(text) as T
       } catch (e) {
         return text
       }
     } catch (e) {
       console.error(e.message)
     }
+    return {} as T
   }
 
   export async function submit(form: HTMLFormElement | string) {
@@ -98,4 +100,18 @@ namespace builder {
       }
     })
   })
+
+  export function element(el: Elemental.RootElementalElement | Elemental.Element | string | HTMLElement | DocumentFragment, location?: string | HTMLElement) {
+    let elem: Elemental.Element
+    if (el instanceof Elemental.Element) elem = el
+    else elem = new Elemental.Element(el)
+    let parent = (<Elemental.RootElementalElement>el).parent
+    if (!Elemental.Elemental.DOM_LOADED) {
+      Elemental.Elemental.ELEMENTS.push({ el: elem, loc: parent || location })
+    }
+    // else {
+    //   elem.render(parent || location)
+    // }
+    return elem
+  }
 }

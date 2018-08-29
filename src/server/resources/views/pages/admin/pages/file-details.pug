@@ -28,7 +28,7 @@ block media
             a(title="Move to trash" href='').trash-delete.red-text: i.fa-lg.fa-fw.far.fa-trash-alt
             span.spinner.hidden: i.fa-lg.fa-fw.fas.fa-spin.fa-sync
           span
-            a(href=`${i.filename}` target='_blank'): i.fa-lg.fa-fw.far.fa-eye
+            a(href=`/admin/media/view/${i._id}` target='_blank'): i.fa-lg.fa-fw.far.fa-eye
         span.col-1.text-center
           if c == 0
             span.label.label-info current

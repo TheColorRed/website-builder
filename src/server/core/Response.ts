@@ -6,12 +6,12 @@ import { Router } from './Router'
 import { ObjectID } from 'mongodb'
 import { Client } from './Client';
 import { unixJoin } from './fs';
-import { MediaObject } from '../models';
+import { MediaFile } from '../models';
 
 export class Response {
 
   private _filePath: string | null = null
-  private _media: MediaObject | null = null
+  private _media: MediaFile | null = null
 
   public constructor(private client: Client, public _body: string = '', public _headers: OutgoingHttpHeaders = {
     'Content-Type': 'text/html'
@@ -22,7 +22,7 @@ export class Response {
   public get headers(): OutgoingHttpHeaders { return this._headers }
   public get contentLength(): number { return this._length }
   public get filePath(): string | null { return this._filePath }
-  public get media(): MediaObject | null { return this._media }
+  public get media(): MediaFile | null { return this._media }
 
   public setContentLength(length: number) {
     this._length = length
@@ -60,7 +60,7 @@ export class Response {
     return this.setCode(code).setHeader('Content-Type', contentType)
   }
 
-  public setMedia(data: MediaObject) {
+  public setMedia(data: MediaFile) {
     this._media = data
     let contentType = mime.lookup(data.filename) || 'application/octet-stream'
     return this.setHeader('Content-Type', contentType).setContentLength(data.length)

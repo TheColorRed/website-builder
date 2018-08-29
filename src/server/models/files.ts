@@ -1,6 +1,6 @@
 import { ObjectID } from 'bson'
 
-export interface MediaObject {
+export interface MediaFile {
   _id: ObjectID | string
   length: number
   chunkSize?: number
@@ -14,14 +14,14 @@ export interface MediaObject {
   }
 }
 
-export interface MediaFile {
-  _id: ObjectID
-  length: number
-  chunkSize: number
-  uploadDate: Date
-  filename: string
-  md5: string
-}
+// export interface MediaFile {
+//   _id: ObjectID
+//   length: number
+//   chunkSize: number
+//   uploadDate: Date
+//   filename: string
+//   md5: string
+// }
 
 export interface MediaChunk {
   _id: ObjectID
@@ -33,6 +33,7 @@ export interface MediaChunk {
 export interface MediaTrash {
   _id: ObjectID
   collection: string
+  deleteDate: Date
   ttl: Date
   restore_id: ObjectID
   data: MediaFile | MediaChunk

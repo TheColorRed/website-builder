@@ -23,7 +23,7 @@ let server = http.createServer((req, res) => {
   function send(response: Response): void {
     let fileSize = response.contentLength
     let start = 0, end = fileSize - 1
-    // If the file is larger than 5,000,000 bytes
+    // If the file is larger than 10,000,000 bytes
     // then send the file in chunks
     if (fileSize > 5e6) {
       let range = (req.headers.range || '') as string
@@ -49,7 +49,7 @@ let server = http.createServer((req, res) => {
       grid.openDownloadStream(new ObjectID(response.media._id), { start, end })
         .on('data', (chunk: string | Buffer) => res.write(chunk))
         .on('end', () => res.end())
-        .on('error', (err: any) => res.end(err))
+        .on('error', () => res.end())
     } else {
       res.write(response.body)
       res.end()
@@ -62,7 +62,7 @@ let server = http.createServer((req, res) => {
     .on('data', (data: Buffer) => {
       body += data.toString('binary')
       // Kill the request if it is larger than 2000000 bytes (approximately 2MB)
-      if (body.length > 2e6) req.connection.destroy()
+      // if (body.length > 2e6) req.connection.destroy()
     })
     // Once all the data has been received start responding to the request
     .on('end', async (data: Buffer) => {

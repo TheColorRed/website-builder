@@ -2,7 +2,7 @@ import { GridFSBucket, ObjectID } from 'mongodb'
 import * as fs from 'fs'
 import * as mime from 'mime-types'
 import { Mongo } from '../core';
-import { MediaObject, MediaTrash } from '../models';
+import { MediaFile, MediaTrash } from '../models';
 
 export class MediaManager {
 
@@ -33,12 +33,16 @@ export class MediaManager {
   }
 
   public async findFile(filePath: string) {
-    let files = await this.mongo.aggregate<MediaObject>('fs.files', [
+    let files = await this.mongo.aggregate<MediaFile>('fs.files', [
       { $match: { filename: filePath } },
       { $sort: { uploadDate: -1 } },
       { $limit: 1 }
     ])
     return await files.next()
+  }
+
+  public async findFileById(id: ObjectID) {
+    return await this.mongo.select<MediaFile>('fs.files', { _id: id }, 1)
   }
 
   public async moveToTrash(id: ObjectID) {
@@ -52,14 +56,16 @@ export class MediaManager {
       let chunk = await chunks.next()
       let ids: ObjectID[] = []
       while (chunk) {
-        bulk.insert({ collection: 'fs.chunks', ttl, restore_id: restoreId, data: chunk })
+        let deleteDate = new Date()
+        bulk.insert({ collection: 'fs.chunks', deleteDate, ttl, restore_id: restoreId, data: chunk })
         ids.push(chunk._id)
         chunk = await chunks.next()
       }
       let ok = !!(await bulk.execute()).ok
       if (ok) {
+        let deleteDate = new Date()
         await this.mongo.delete('fs.chunks', { _id: { $in: ids } })
-        await this.mongo.insert('trash', { collection: 'fs.files', ttl, restore_id: restoreId, data: item })
+        await this.mongo.insert('trash', { collection: 'fs.files', deleteDate, ttl, restore_id: restoreId, data: item })
         await this.mongo.delete('fs.files', { _id: id }, 1)
       }
       return ok

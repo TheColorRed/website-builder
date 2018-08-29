@@ -66,7 +66,6 @@ export class Client {
           }
         }
       })
-      console.log(this._files, this._post)
     } else {
       try {
         this._post = JSON.parse(body)

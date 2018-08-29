@@ -1,9 +1,8 @@
 const gulp = require('gulp')
 const ts = require('gulp-typescript')
-// const sourcemaps = require('gulp-sourcemaps')
-const ncp = require('ncp').ncp
 const sass = require('gulp-sass')
 const uglify = require('gulp-uglify-es').default
+// const concat = require('gulp-concat')
 
 const projects = {
   server: {
@@ -33,7 +32,14 @@ gulp.task('build-client', function () {
   let tsconfig = projects.client.tsconfig
   var tsProject = ts.createProject(tsconfig)
   let tsResult = tsProject.src().pipe(tsProject())
-  return tsResult.js.pipe(uglify()).pipe(gulp.dest('public/js'))
+  return tsResult.js.pipe(uglify())
+    .pipe(gulp.dest('public/js'))
+  // .on('end', () => {
+  //   gulp.src(['public/js/main.js', 'node_modules/pug/lib/index.js'])
+  //     .pipe(concat('main.js'))
+  //     .pipe(uglify())
+  //     .pipe(gulp.dest('public/js'))
+  // })
 })
 
 gulp.task('build-sass', function () {
