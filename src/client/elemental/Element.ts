@@ -1,10 +1,11 @@
-namespace Elemental {
+namespace Tagger {
 
   interface QueryObject {
     classList: string[]
     text: string
     id: string
     element: string
+    fragment: boolean
     properties: string[]
     attributes: { key: string, value: string }[]
   }
@@ -13,13 +14,16 @@ namespace Elemental {
     'created': Event
     'rendered': Event
     'loaded': Event
+    'visibility': Event
+    'children': ElementalEventsTypes
+    [key: string]: any
   }
 
   export type ElementalEventsTypes = {
-    [key in keyof (HTMLElementEventMap & ElementalEventMap)]?: () => void
+    [key in keyof (HTMLElementEventMap & ElementalEventMap)]?: (this: HTMLElement, e: Event) => void
   }
 
-  export interface ElementalEvents {
+  export interface ElementalChildrenEvents {
     children?: ElementalEventsTypes
   }
 
@@ -49,20 +53,20 @@ namespace Elemental {
      * * A single element will will create one element within the current element.
      * * A string will create a single element within the current element.
      *
-     * @type {((ElementalElement | Element | DocumentFragment | string)[] | ElementalElement | Element | DocumentFragment | string)}
+     * @type {((ElementalElement | Element | HTMLElement | DocumentFragment | string)[] | ElementalElement | Element | HTMLElement | DocumentFragment | string)}
      * @memberof ElementalElement
      */
-    children?: (ElementalElement | Element | DocumentFragment | string)[] | ElementalElement | Element | DocumentFragment | string
+    children?: (ElementalElement | Element | HTMLElement | DocumentFragment | string)[] | ElementalElement | Element | HTMLElement | DocumentFragment | string
     /**
      * These are the events for the current element.
      *
      * * A list of functions will automatically execute `addEventListener(propName)` on the current element.
      * * The `children` property in this object is reserved for adding all the contained events on the current element's children.
      *
-     * @type {ElementalEvents}
+     * @type {ElementalChildrenEvents & ElementalEventsTypes}
      * @memberof ElementalElement
      */
-    events?: ElementalEvents & ElementalEventsTypes
+    events?: ElementalChildrenEvents | ElementalEventsTypes
     /**
      * Should this element be rendered?
      *
@@ -88,18 +92,31 @@ namespace Elemental {
       if (location && typeof location == 'string') loc = document.querySelector(location) as HTMLElement
       else if (location instanceof Element) loc = location.rootElement as HTMLElement
       else if (location && location instanceof HTMLElement) loc = location as HTMLElement
-      if (!loc) return
+      if (!loc) return this
       if (this.el instanceof HTMLElement || this.el instanceof DocumentFragment) this._rootElement = this.el
       else this._rootElement = this.makeElement(this.el, loc)
+      loc.appendChild(this._rootElement)
+      this._rootElement = loc
+      Array.from(loc.querySelectorAll<HTMLElement>('*')).forEach(el => el.dispatchEvent(new Event('loaded')))
+      return this
     }
 
     public compile() {
+      if (this.el instanceof HTMLElement || this.el instanceof DocumentFragment) return this.el
       let frag = document.createDocumentFragment()
-      // if (this.el instanceof HTMLElement || this.el instanceof DocumentFragment) return this.el
-      let result = this.makeElement(this.el, frag)
-      console.log(result.outerHTML)
-      Array.from(result.querySelectorAll<HTMLElement>('*')).forEach(el => el.dispatchEvent(new Event('loaded')))
-      return result
+      this._rootElement = this.makeElement(this.el, frag)
+      return this._rootElement
+    }
+
+    public toString() {
+      // if (element instanceof HTMLElement) return element.outerHTML
+      if (this.rootElement instanceof HTMLElement) return this.rootElement.innerHTML
+      else if (this.rootElement instanceof DocumentFragment) {
+        let div = document.createElement('div')
+        for (let e of this.rootElement.children) { div.appendChild(e) }
+        return div.innerHTML
+      }
+      else return ''
     }
 
     public static each<T>(data: T[], callback: (item: T, index: number, data: T[]) => Element) {
@@ -118,28 +135,38 @@ namespace Elemental {
     public static join(...elements: Element[]) {
       let frag = document.createDocumentFragment()
       for (let elem of elements) {
-        let el = elem.el
-        if (el instanceof HTMLElement || el instanceof DocumentFragment) {
-          frag.appendChild(el)
+        if (elem.el instanceof HTMLElement || elem.el instanceof DocumentFragment) {
+          frag.appendChild(elem.el)
           continue
         }
-        frag.appendChild(elem.makeElement(el, frag))
+        frag.appendChild(elem.makeElement(elem.el, frag))
       }
       return new Element(frag)
     }
 
-    private makeElement<T extends HTMLElement | DocumentFragment>(elem: ElementalElement | HTMLElement | DocumentFragment | string, parent: HTMLElement | DocumentFragment): T {
-      if (elem instanceof DocumentFragment || elem instanceof HTMLElement) {
+    private makeElement<T extends HTMLElement | DocumentFragment>(elem: ElementalElement | Element | HTMLElement | DocumentFragment | string, parent: HTMLElement | DocumentFragment): T {
+      if (elem instanceof HTMLElement || elem instanceof DocumentFragment) {
         parent.appendChild(elem)
         return elem as T
+      } else if (elem instanceof Element) {
+        let e = this.makeElement(elem.el, parent)
+        parent.appendChild(e)
+        if (elem.el instanceof HTMLElement || elem.el instanceof DocumentFragment) {
+          return elem.el as T
+        }
+        return e as T
       }
       let info = this.parseQuerySelector(typeof elem == 'string' ? elem : elem.tag || '')
-      let el = document.createElement(info.element)
+      let el = info.fragment ? document.createDocumentFragment() : document.createElement(info.element)
       // Add the classes, attributes and the id to the element
-      info.id.length > 0 && (el.id = info.id)
-      info.classList.length > 0 && el.classList.add(...info.classList)
-      info.attributes.forEach(a => a.key ? el.setAttribute(a.key, a.value) : el.setAttribute(a.value, a.value))
-      info.properties.forEach(p => el.setAttribute(p, p))
+      if (el instanceof HTMLElement) {
+        info.id.length > 0 && (el.id = info.id)
+        info.classList.length > 0 && el.classList.add(...info.classList)
+        info.attributes.forEach(a => a.key ?
+          el instanceof HTMLElement && el.setAttribute(a.key, a.value) :
+          el instanceof HTMLElement && el.setAttribute(a.value, a.value))
+        info.properties.forEach(p => el instanceof HTMLElement && el.setAttribute(p, p))
+      }
       parent.appendChild(el)
 
       // If the element is a string create the element
@@ -151,21 +178,20 @@ namespace Elemental {
         let text = elem.txt && elem.txt.length > 0 ? elem.txt : info.text.length > 0 ? info.text : ''
         text.length > 0 && el.appendChild(document.createTextNode(text))
         // Adds the events to the current element
-        this.addEvents(elem, el)
+        el instanceof HTMLElement && this.addEvents(elem, el)
         // Create the child elements
         if (elem && Array.isArray(elem.children)) {
           // The children elements are an array of items
           // Loop through them and add them
           elem.children.forEach(child => {
-            if ((typeof child['render'] == 'boolean' && child['render']) || typeof child['render'] == 'undefined')
-              this.makeElement(child, el)
+            this.makeElement(child, el)
           })
         } else if (elem && ['object', 'string'].includes(typeof elem.children)) {
           // The children elements is a single element either of an object or string
           this.makeElement(elem.children as ElementalElement, el)
         }
         // Adds the same event to all the child elements
-        this.addChildEvents(elem, el)
+        el instanceof HTMLElement && this.addChildEvents(elem, el)
       }
       el.dispatchEvent(new Event('rendered'))
       return el as T
@@ -178,6 +204,13 @@ namespace Elemental {
           // If the event is not a function go to next item
           if (typeof event != 'function') continue
           el.addEventListener(evtName, event.bind(el))
+          if (evtName == 'visibility') {
+            new IntersectionObserver((entries) => {
+              for (let entry of entries) {
+                entry.target.dispatchEvent(new Event(evtName))
+              }
+            }).observe(el)
+          }
         }
         el.dispatchEvent(new Event('created'))
       }
@@ -201,6 +234,7 @@ namespace Elemental {
         classList: [],
         id: '',
         element: 'div',
+        fragment: false,
         attributes: [],
         properties: [],
         text: ''
@@ -208,6 +242,7 @@ namespace Elemental {
       obj.id = (selector.match(/#\w+(?![^[]*])/) || [''])[0].replace('#', '')
       obj.classList = (selector.match(/\.[\w-_]+(?![^[]*])/g) || []).map(v => v.replace('.', ''))
       obj.element = selector.toLowerCase().split(/[^a-z0-9]/, 2)[0] || 'div'
+      if (selector.startsWith('$frag') || selector.startsWith('$fragment')) obj.fragment = true
       obj.attributes = (selector.match(/\[.+?\]/g) || []).reduce<{ key: string, value: string }[]>((r, v) => {
         let items = v.split('=')
         let key = items.shift()

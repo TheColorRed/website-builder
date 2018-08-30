@@ -1,6 +1,6 @@
 interface HTMLElement extends Element {
-  addEventListeners<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void
-  addEventListeners(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void
+  // addEventListeners<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void
+  addEventListeners(type: string, listener: (this: HTMLElement, ev: Event) => void, options?: boolean | AddEventListenerOptions): void
 }
 HTMLElement.prototype.addEventListeners = function (...args: any[]) {
   (<string>args[0]).split(' ').filter(i => i.trim().length > 0).forEach(event => {
@@ -13,10 +13,10 @@ namespace builder {
       e.preventDefault()
       e.stopPropagation()
     })
-    form.addEventListeners('dragover dragenter', function (e) { this.classList.add('is-dragover') })
-    form.addEventListeners('dragleave dragend drop', function (e) { this.classList.remove('is-dragover') })
+    form.addEventListeners('dragover dragenter', function () { this.classList.add('is-dragover') })
+    form.addEventListeners('dragleave dragend drop', function () { this.classList.remove('is-dragover') })
     form.addEventListeners('drop', function (e) {
-      let droppedFiles = Array.from(e.dataTransfer.files)
+      let droppedFiles = Array.from((<DragEvent>e).dataTransfer.files)
       droppedFiles.forEach(file => {
         let reader = new FileReader()
         reader.addEventListener('load', async function (e) {

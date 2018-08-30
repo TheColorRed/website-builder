@@ -63,13 +63,6 @@ namespace builder {
       makeListing(data)
     })
 
-    Array.from(document.querySelectorAll<HTMLAnchorElement>('.directory-item')).forEach(dir => {
-      dir.addEventListener('click', async function (e) {
-        e.preventDefault()
-        await openDirectory(this)
-      })
-    })
-
     async function openDirectory(el?: HTMLElement | string) {
       let path = ''
       if (el instanceof HTMLElement) path = el.getAttribute('data-path') || ''
@@ -81,7 +74,7 @@ namespace builder {
 
     function makeListing(data: Listing) {
       listing.innerHTML = ''
-      let elementList: Elemental.Element[] = []
+      let elementList: Tagger.Element[] = []
       if (data.directories.length > 0) {
         elementList.push(makeDirectoryHeader())
         elementList.push(makeDirectoryListing(data.directories))
@@ -90,13 +83,11 @@ namespace builder {
         elementList.push(makeFileHeader())
         elementList.push(makeFileListing(data.files))
       }
-      let c = Elemental.Element.join(...elementList).compile()
-      console.log('c', c.outerHTML)
-      listing.appendChild(c)
+      Tag.join(...elementList).render(listing)
     }
 
     function makeDirectoryHeader() {
-      return element({
+      return tag({
         tag: 'p.fluid.row.text-bold',
         children: [
           'span.col-1.text-center Actions',
@@ -106,8 +97,8 @@ namespace builder {
     }
 
     function makeDirectoryListing(dirs: DirectoryItem[]) {
-      return element(Elemental.Element.each(dirs, (i: DirectoryItem) => {
-        return element({
+      return Tag.each(dirs, (dir: DirectoryItem) => {
+        return tag({
           tag: 'p.fluid.row[data-directory=`${i.directory}`]',
           children: [
             {
@@ -128,16 +119,24 @@ namespace builder {
             },
             {
               tag: 'span.col-3.overflow-ellipsis',
-              children: `a.directory-item[href='?path=${i.directory}'][data-path='${i.directory}'][title='${i.nextDirectory}'] ${i.nextDirectory}`
+              events: {
+                children: {
+                  click(e) {
+                    e.preventDefault()
+                    openDirectory(this)
+                  }
+                }
+              },
+              children: `a.directory-item[href='?path=${dir.directory}'][data-path='${dir.directory}'][title='${dir.nextDirectory}'] ${dir.nextDirectory}`
             }
           ]
         })
-      }))
+      })
     }
 
     function makeFileHeader() {
-      return element({
-        tag: 'div',
+      return tag({
+        tag: '$frag',
         children: [
           {
             tag: 'p.fluid.row.text-bold',
@@ -153,27 +152,35 @@ namespace builder {
     }
 
     function makeFileListing(files: FileItem[]) {
-      return element({
-        tag: 'div',
+      return tag({
+        tag: '$frag',
         children: [
           {
             tag: 'p.fluid.row',
             children: {
-              tag: `span.col-12 0 files have been hidden from the filter`,
+              tag: `span.col-12.filter-count`,
               events: {
-                loaded() {
+                loaded: () => $('.filter-count').dispatch('update'),
+                update() {
                   applyFilter()
-                  let hidden = document.querySelectorAll('.media-file.hidden').length
-                  console.log(hidden)
-                  // console.log(document.querySelectorAll('.media-file'))
-                  // console.log(document.querySelectorAll('.media-file'), this)
+                  let hidden = $('.media-file.hidden').count()
+                  if (hidden > 0) {
+                    this.parentElement && this.parentElement.classList.remove('hidden')
+                    if (hidden == 1) this.textContent = `${hidden} file has`
+                    else this.textContent = `${hidden} files have`
+                    this.textContent += ' been hidden with this filter'
+                  }
+                  else this.parentElement && this.parentElement.classList.add('hidden')
                 }
               }
             }
           },
-          Elemental.Element.each(files, (file) => {
-            return element({
+          Tag.each(files, (file) => {
+            return tag({
               tag: `p.fluid.row.media-file[data-filename='${file.filename}'][data-file='${file.file}'][data-type='${file.metadata.type}']`,
+              events: {
+                visibility: () => $('.filter-count').dispatch('update')
+              },
               children: [
                 {
                   tag: 'span.col-1.text-center',
@@ -210,7 +217,7 @@ namespace builder {
     function applyFilter() {
       let types = getTypes()
       let query = getQuery()
-      Array.from(document.querySelectorAll<HTMLElement>('.media-file')).forEach(row => {
+      Array.from(listing.querySelectorAll<HTMLElement>('.media-file')).forEach(row => {
         let type = row.getAttribute('data-type') || ''
         let file = row.getAttribute('data-file') || ''
         if (

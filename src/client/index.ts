@@ -9,10 +9,10 @@ namespace builder {
     }, {})
   }
 
-  export async function send<T extends any>(form: HTMLFormElement): Promise<T>
-  export async function send<T extends any>(form: HTMLFormElement, data: { [key: string]: any } | FormData): Promise<T>
-  export async function send<T extends any>(url: string, data: { [key: string]: any } | FormData, method: formMethod): Promise<T>
-  export async function send<T extends any>(...args: any[]): Promise<T> {
+  export async function send<T>(form: HTMLFormElement): Promise<T>
+  export async function send<T>(form: HTMLFormElement, data: { [key: string]: any } | FormData): Promise<T>
+  export async function send<T>(url: string, data: { [key: string]: any } | FormData, method: formMethod): Promise<T>
+  export async function send<T>(...args: any[]): Promise<T> {
     let url = ''
     let data = {}
     let method: formMethod = args.length == 1 ? args[0].method :
@@ -65,7 +65,7 @@ namespace builder {
       try {
         return JSON.parse(text) as T
       } catch (e) {
-        return text
+        return <any>text as T
       }
     } catch (e) {
       console.error(e.message)
@@ -100,18 +100,4 @@ namespace builder {
       }
     })
   })
-
-  export function element(el: Elemental.RootElementalElement | Elemental.Element | string | HTMLElement | DocumentFragment, location?: string | HTMLElement) {
-    let elem: Elemental.Element
-    if (el instanceof Elemental.Element) elem = el
-    else elem = new Elemental.Element(el)
-    let parent = (<Elemental.RootElementalElement>el).parent
-    if (!Elemental.Elemental.DOM_LOADED) {
-      Elemental.Elemental.ELEMENTS.push({ el: elem, loc: parent || location })
-    }
-    // else {
-    //   elem.render(parent || location)
-    // }
-    return elem
-  }
 }

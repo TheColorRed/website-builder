@@ -13,7 +13,7 @@ namespace builder {
   let btnInstall = document.querySelector('#install') as HTMLInputElement
   btnInstall && btnInstall.addEventListener('click', async e => {
     e.preventDefault()
-    let response = await submit(btnInstall.closest('form') as HTMLFormElement)
+    let response = await submit(btnInstall.closest('form') as HTMLFormElement) as { error: boolean, message: string }
     if (!response.error) {
       window.location.href = REDIRECT_TO
     } else {
@@ -25,7 +25,7 @@ namespace builder {
   let btnTestConnection = document.querySelector('#test-connection') as HTMLInputElement
   btnTestConnection && btnTestConnection.addEventListener('click', async e => {
     let items = document.querySelectorAll('input[name^=db-]') as NodeListOf<HTMLInputElement>
-    let response = await send(TEST_CONN, toKeyValue(items), 'post')
+    let response = await send(TEST_CONN, toKeyValue(items), 'post') as { error: boolean, message: string }
     if (response.error) alert(response.message)
     else alert('Connection successful')
   })
