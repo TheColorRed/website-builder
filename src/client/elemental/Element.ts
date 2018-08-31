@@ -229,7 +229,7 @@ namespace Tagger {
       }
     }
 
-    private parseQuerySelector(selector: string) {
+    private parseQuerySelector(selectorLogic: string) {
       let obj: QueryObject = {
         classList: [],
         id: '',
@@ -239,10 +239,19 @@ namespace Tagger {
         properties: [],
         text: ''
       }
+      // Get the selector portion of the logic
+      let selector = selectorLogic.replace(/\s+(?![^[]*]).+/, '').trim()
+      // Get the text portion of the logic
+      obj.text = (selectorLogic.match(/\s+(?![^[]*]).+/) || [''])[0].trim()
+      // Get the id
       obj.id = (selector.match(/#\w+(?![^[]*])/) || [''])[0].replace('#', '')
+      // Get the class list
       obj.classList = (selector.match(/\.[\w-_]+(?![^[]*])/g) || []).map(v => v.replace('.', ''))
+      // Get the element (defaults to a `div`)
       obj.element = selector.toLowerCase().split(/[^a-z0-9]/, 2)[0] || 'div'
+      // Check if the element should be a document fragment
       if (selector.startsWith('$frag') || selector.startsWith('$fragment')) obj.fragment = true
+      // Get the attributes
       obj.attributes = (selector.match(/\[.+?\]/g) || []).reduce<{ key: string, value: string }[]>((r, v) => {
         let items = v.split('=')
         let key = items.shift()
@@ -260,10 +269,8 @@ namespace Tagger {
               .replace(/('|")$/, '')
         })
       }, [])
+      // Get the properties which are values that are prefixed with a ":"
       obj.properties = (selector.match(/:\w+(?![^[]*])/g) || []).reduce<string[]>((r, v) => r.concat(v.replace(/^:/, '')), [])
-      // obj.properties = (selector.match(/:\D+/g) || []).reduce<string[]>((r, v) => r.concat(v.replace(/^:/, '')), [])
-      // obj.text = selector.includes(' ') ? selector.substr(selector.indexOf(' ') + 1) : ''
-      obj.text = (selector.match(/\s+(?![^[]*]).+/g) || [''])[0].trim()
       return obj
     }
   }

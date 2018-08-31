@@ -263,11 +263,17 @@ export class Mongo {
     else if (total <= 0) this.insert(collection, Object.assign(filter, data))
   }
 
+  public unorderedBulk(collection: string) {
+    return this.db.collection(collection).initializeUnorderedBulkOp()
+  }
+
+  public orderedBulk(collection: string) {
+    return this.db.collection(collection).initializeOrderedBulkOp()
+  }
+
   public close() {
     this.client.close()
   }
-
-
 
   /**
    * Gets a setting from the settings table

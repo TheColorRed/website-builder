@@ -92,6 +92,7 @@ nav {
   padding: ($cell-margin * 3) $cell-margin;
   position: sticky;
   top: 0;
+  z-index: 1000;
 }
 
 #primary-content {

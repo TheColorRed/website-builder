@@ -21,4 +21,6 @@ Router.group('/', { middleware: [startSession, adminLogged, csrf] }, () => {
 
   Router.post('/media/trash/restore', 'admin/trash@restoreFromTrash').name('api-admin-restore-media')
   Router.post('/media/trash/purge', 'admin/trash@restoreFromTrash').name('api-admin-purge-media')
+
+  Router.get('/pages', 'admin/pages@pages').name('api-admin-pages')
 })

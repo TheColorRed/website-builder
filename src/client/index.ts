@@ -9,20 +9,26 @@ namespace builder {
     }, {})
   }
 
+  export async function send<T>(url: string): Promise<T>
   export async function send<T>(form: HTMLFormElement): Promise<T>
   export async function send<T>(form: HTMLFormElement, data: { [key: string]: any } | FormData): Promise<T>
+  export async function send<T>(url: string, data: { [key: string]: any } | FormData): Promise<T>
   export async function send<T>(url: string, data: { [key: string]: any } | FormData, method: formMethod): Promise<T>
   export async function send<T>(...args: any[]): Promise<T> {
     let url = ''
     let data = {}
-    let method: formMethod = args.length == 1 ? args[0].method :
-      args.length == 2 ? args[0].method :
-        args.length == 3 ? args[2] : 'get'
+    let method: formMethod = args.length == 1 && args[0] instanceof HTMLElement ? args[0].method :
+      args.length == 2 && args[0] instanceof HTMLFormElement ? args[0].method :
+        args.length == 2 && typeof args[0] == 'string' ? 'get' :
+          args.length == 3 ? args[2] : 'get'
     let options: RequestInit = { method }
     options.headers = { 'X-Requested-With': 'XMLHttpRequest' }
-    if (args.length == 1) {
+    if (args.length == 1 && args[0] instanceof HTMLFormElement) {
       url = args[0].action
       data = new FormData(args[0])
+    } else if (args.length == 1 && typeof args[0] == 'string') {
+      url = args[0]
+      method = 'get'
     } else if (args.length == 2 || args.length == 3) {
       url = args[0] instanceof HTMLFormElement ? args[0].action : args[0]
       data = args[1]

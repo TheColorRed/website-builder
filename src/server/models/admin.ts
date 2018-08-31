@@ -27,8 +27,3 @@ export interface Setting {
   key: string
   value: any
 }
-
-export interface Page {
-  path: string
-  document: RootElement
-}

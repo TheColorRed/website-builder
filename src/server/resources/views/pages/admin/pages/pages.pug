@@ -1,0 +1,9 @@
+extends ../main
+
+//- block head
+  .well
+    .fluid.row: h1.col Pages
+block content
+  script.
+    const PAGES_URL = '#{route.name("api-admin-pages")}'
+  .well#pages

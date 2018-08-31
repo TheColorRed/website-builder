@@ -6,6 +6,7 @@
     "outFile": "../../public/js/main.js"
   },
   "include": [
+    "elemental/**/*.ts",
     "**/*.ts"
   ]
 }

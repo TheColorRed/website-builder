@@ -28,8 +28,15 @@ class Tag {
     else if (typeof arg === 'string') this.items = Array.from(document.querySelectorAll<HTMLElement>(arg))
   }
 
-  public dispatch(event: string) {
-    this.items.forEach(item => item.dispatchEvent(new Event(event)))
+  public dispatch(events: string) {
+    this.items.forEach(item => events.split(' ').forEach(evt => item.dispatchEvent(new Event(evt))))
+  }
+
+  public broadcast(events: string) {
+    let to: HTMLElement[] = []
+    this.items.forEach(itm => to.push(...Array.from(itm.querySelectorAll<HTMLElement>('*'))))
+    to = [...new Set(to)]
+    to.forEach(item => events.split(' ').forEach(evt => item.dispatchEvent(new Event(evt))))
   }
 
   public count() {
@@ -48,6 +55,12 @@ class Tag {
     let closest: HTMLElement
     this.items.forEach(item => (closest = item.closest(selector) as HTMLElement) && items.push(closest))
     this.items = items
+    return this
+  }
+
+  public remove() {
+    this.items.forEach(item => item.remove())
+    this.items = []
     return this
   }
 
@@ -70,7 +83,8 @@ class Tag {
   }
 
   public static each<T>(data: T[], callback: (item: T, index: number, data: T[]) => Tagger.Element) {
-    return Tagger.Element.each<T>(data, callback)
+    if (Array.isArray(data)) return Tagger.Element.each<T>(data, callback)
+    return new Tagger.Element('')
   }
 
   public static create(el: Tagger.RootElementalElement | Tagger.Element | string | HTMLElement | DocumentFragment, location?: string | HTMLElement) {

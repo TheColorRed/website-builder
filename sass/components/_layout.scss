@@ -32,4 +32,14 @@
   .margin-right-#{$i} {
     margin-right: #{$i}px;
   }
+
+  .margin-horizontal-#{$i} {
+    margin-right: #{$i}px;
+    margin-left: #{$i}px;
+  }
+
+  .margin-vertical-#{$i} {
+    margin-top: #{$i}px;
+    margin-bottom: #{$i}px;
+  }
 }
