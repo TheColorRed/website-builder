@@ -1,5 +1,4 @@
-import { send } from '../ajax';
-import { makeDirectoryListing, makeFileListing, makeFilter } from '../templates/admin/media';
+import { makeDirectoryListing, makeFileListing, makeFilter } from '../templates/admin/media'
 
 export interface DirectoryItem {
   directory: string
@@ -45,34 +44,17 @@ window.addEventListener('popstate', async e => {
   let path = window.location.search.replace(/^\?/, '').split('&').find(i => i.startsWith('path='))
   if (path) path = path.split('=').pop()
   path && openDirectory(path)
-  // let data = await send<Listing>(FILES_URL, { path }, 'get')
-  // makeListing(data)
 })
 
 export async function openDirectory(path: string) {
-  // $('#media-listings').ajax(FILES_URL, { path }, 'get', (data: Listing) => {
-  //   updateState(path)
-  //   return Tag.join(
-  //     makeDirectoryListing(data.directories),
-  //     makeFileListing(data.files)
-  //   )
-  // })
+  $('#media-listings').ajax(FILES_URL, { path }, 'get', (data: Listing) => {
+    updateState(path)
+    return Tag.join(
+      makeDirectoryListing(data.directories),
+      makeFileListing(data.files)
+    )
+  })
 }
-
-// export async function openDirectory(el?: HTMLElement | string) {
-//   if (el instanceof HTMLElement) path = el.getAttribute('data-path') || ''
-//   else if (typeof el == 'string') path = el
-//   let data = await send<Listing>(FILES_URL, { path }, 'get')
-//   updateState()
-//   makeListing(data)
-// }
-
-// export function makeListing(data: Listing) {
-//   return Tag.join(
-//     makeDirectoryListing(data.directories),
-//     makeFileListing(data.files)
-//   ).render('#media-listings')
-// }
 
 let updatingState = false
 

@@ -17,3 +17,6 @@ requirejs(['ajax'], function (ajax: any) {
     })
   })
 })
+requirejs(['templates/admin/nav'], function (nav: any) {
+  nav.mainNav().render('#main-nav')
+})
