@@ -17,7 +17,8 @@ Router.group('/', { middleware: [startSession, adminLogged, csrf] }, () => {
   Router.post('/media/delete', 'admin/trash@moveToTrash').name('api-admin-delete-media')
   Router.post('/media/filter', 'admin/media@filter').name('api-admin-filter-media')
   Router.post('/media/upload', 'admin/media@upload').name('api-admin-upload-media')
-  Router.get('/media/file', 'admin/media@main').name('api-admin-media-file')
+  Router.get('/media/files', 'admin/media').name('api-admin-media-files')
+  Router.get('/media/file', 'admin/media@file').name('api-admin-media-file')
 
   Router.post('/media/trash/restore', 'admin/trash@restoreFromTrash').name('api-admin-restore-media')
   Router.post('/media/trash/purge', 'admin/trash@restoreFromTrash').name('api-admin-purge-media')

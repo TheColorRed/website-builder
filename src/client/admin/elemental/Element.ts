@@ -35,10 +35,10 @@ namespace Tagger {
      * * Using child selectors are invalid such as ".red > .white" and ".red .white".
      * * Anything after the first space will be converted to text content.
      *
-     * @type {string}
+     * @type {string | Element}
      * @memberof ElementalElement
      */
-    tag: string
+    tag?: string | Element
     /**
      * This is the text content of the element and overrides the selector text content.
      *
@@ -63,42 +63,103 @@ namespace Tagger {
      * * A list of functions will automatically execute `addEventListener(propName)` on the current element.
      * * The `children` property in this object is reserved for adding all the contained events on the current element's children.
      *
-     * @type {ElementalChildrenEvents & ElementalEventsTypes}
+     * @type {ElementalChildrenEvents | ElementalEventsTypes}
      * @memberof ElementalElement
      */
     events?: ElementalChildrenEvents | ElementalEventsTypes
     /**
      * Should this element be rendered?
      *
-     * @type {boolean}
+     * @type {boolean | Function}
      * @memberof ElementalElement
      */
-    render?: boolean
+    render?: boolean | Function
   }
 
   export interface RootElementalElement extends ElementalElement {
     parent?: string | HTMLElement | Element
   }
+  // Tagger.createElement(
+  //   "h1",
+  //   { class: "red white blue" },
+  //   Tagger.createElement("span", null, "Hello world"),
+  //   Tagger.createElement("span", null, "Hello again")
+  // );
+  export function createElement(element: string, attributes: { [key: string]: any } | null, ...children: (string | Element)[]) {
+    let attrs = []
+    if (attributes) {
+      for (let attr in attributes) {
+        attrs.push(`[${attr}="${attributes[attr]}"]`)
+      }
+    }
+    let selector = element + attrs.join('') + ' ' + children.map(child => typeof child == 'string' ? child : ' ').join('').trim()
+    let childMap = children.map(c => c instanceof Element ? c : null).filter(i => i instanceof Element) as Element[]
+    let newChildren = Tag.join(...childMap)
+    return tag({
+      tag: selector,
+      children: newChildren
+    })
+  }
 
   export class Element {
 
-    private _rootElement?: HTMLElement | DocumentFragment
+    private _rootElement!: HTMLElement | DocumentFragment
+    private _renderedTo: HTMLElement | undefined
     public get rootElement() { return this._rootElement }
 
-    public constructor(private el: RootElementalElement | string | HTMLElement | DocumentFragment) { }
+    public constructor(private el: RootElementalElement | RootElementalElement[] | string | HTMLElement | DocumentFragment) { }
+
+    /**
+     * Broadcasts to the tag once rendered
+     *
+     * @param {string} events The events to broadcast (separated by a space)
+     * @memberof Element
+     */
+    public broadcast(events: string) {
+      if (this._renderedTo instanceof HTMLElement) {
+        $(this._renderedTo).broadcast(events)
+      }
+    }
+
+    /**
+     * Dispatch to the current element once rendered
+     *
+     * @param {string} events The events to dispatch (separated by a space)
+     * @memberof Element
+     */
+    public dispatch(events: string) {
+      if (this._renderedTo instanceof HTMLElement) {
+        $(this._renderedTo).dispatch(events)
+      }
+    }
 
     public render(location?: string | HTMLElement | Element) {
+      let loc = this.setRoot(location)
+      if (!loc) return this
+      loc.innerHTML = ''
+      loc.appendChild(this.rootElement)
+      this._renderedTo = loc
+      Array.from(loc.querySelectorAll<HTMLElement>('*')).forEach(el => el.dispatchEvent(new Event('loaded')))
+      return this
+    }
+
+    public append(location?: string | HTMLElement | Element) {
+      let loc = this.setRoot(location)
+      if (!loc) return this.el
+      loc.appendChild(this.rootElement)
+      this._renderedTo = loc
+      Array.from(loc.querySelectorAll<HTMLElement>('*')).forEach(el => el.dispatchEvent(new Event('loaded')))
+      return this
+    }
+
+    private setRoot(location?: string | HTMLElement | Element) {
       let loc = document.body
       if (location && typeof location == 'string') loc = document.querySelector(location) as HTMLElement
       else if (location instanceof Element) loc = location.rootElement as HTMLElement
       else if (location && location instanceof HTMLElement) loc = location as HTMLElement
-      if (!loc) return this
       if (this.el instanceof HTMLElement || this.el instanceof DocumentFragment) this._rootElement = this.el
       else this._rootElement = this.makeElement(this.el, loc)
-      loc.appendChild(this._rootElement)
-      this._rootElement = loc
-      Array.from(loc.querySelectorAll<HTMLElement>('*')).forEach(el => el.dispatchEvent(new Event('loaded')))
-      return this
+      return loc
     }
 
     public compile() {
@@ -144,7 +205,7 @@ namespace Tagger {
       return new Element(frag)
     }
 
-    private makeElement<T extends HTMLElement | DocumentFragment>(elem: ElementalElement | Element | HTMLElement | DocumentFragment | string, parent: HTMLElement | DocumentFragment): T {
+    private makeElement<T extends HTMLElement | DocumentFragment>(elem: ElementalElement | ElementalElement[] | Element | HTMLElement | DocumentFragment | string, parent: HTMLElement | DocumentFragment): T {
       if (elem instanceof HTMLElement || elem instanceof DocumentFragment) {
         parent.appendChild(elem)
         return elem as T
@@ -155,8 +216,25 @@ namespace Tagger {
           return elem.el as T
         }
         return e as T
+      } else if (Array.isArray(elem)) {
+        let frag = document.createDocumentFragment()
+        elem.forEach(e => this.makeElement(e, frag))
+        return frag as T
+      } else if (typeof elem != 'string') {
+        let r = true
+        if (typeof elem.render == 'function') r = elem.render()
+        else if (typeof elem.render == 'boolean') r = elem.render
+        // typeof elem.tag == 'string' && elem.tag.includes('.up-level') && console.log(r, elem)
+        if (r === false) {
+          return document.createDocumentFragment() as T
+        }
       }
-      let info = this.parseQuerySelector(typeof elem == 'string' ? elem : elem.tag || '')
+      let tag = typeof elem == 'string' ? elem :
+        elem.tag ? elem.tag : '$frag'
+      if (tag instanceof Element) {
+        return this.makeElement(tag, parent)
+      }
+      let info = this.parseQuerySelector(tag)
       let el = info.fragment ? document.createDocumentFragment() : document.createElement(info.element)
       // Add the classes, attributes and the id to the element
       if (el instanceof HTMLElement) {
@@ -181,11 +259,13 @@ namespace Tagger {
         el instanceof HTMLElement && this.addEvents(elem, el)
         // Create the child elements
         if (elem && Array.isArray(elem.children)) {
+          // if (typeof elem.render == 'undefined' || (typeof elem.render == 'boolean' && elem.render)) {
           // The children elements are an array of items
           // Loop through them and add them
           elem.children.forEach(child => {
             this.makeElement(child, el)
           })
+          // }
         } else if (elem && ['object', 'string'].includes(typeof elem.children)) {
           // The children elements is a single element either of an object or string
           this.makeElement(elem.children as ElementalElement, el)
@@ -202,8 +282,13 @@ namespace Tagger {
         for (let evtName in elem.events) {
           let event = (<any>elem.events)[evtName]
           // If the event is not a function go to next item
-          if (typeof event != 'function') continue
-          el.addEventListener(evtName, event.bind(el))
+          if (!['function', 'string'].includes(typeof event)) continue
+          if (typeof event == 'function') {
+            el.addEventListener(evtName, event.bind(el))
+          } else if (typeof event == 'string') {
+            let theEvent = event.split('.').reduce((acc, key) => acc && (<any>acc)[key] ? (<any>acc)[key] : null, window)
+            if (theEvent) el.addEventListener(evtName, theEvent.bind(el))
+          }
           if (evtName == 'visibility') {
             new IntersectionObserver((entries) => {
               for (let entry of entries) {
@@ -216,14 +301,24 @@ namespace Tagger {
       }
     }
 
-    private addChildEvents(elm: ElementalElement, el: HTMLElement) {
+    private addChildEvents(elem: ElementalElement, el: HTMLElement) {
       // Add the events to the child elements
-      if (elm.events && elm.events.children) {
+      if (elem.events && elem.events.children) {
+        // console.log(elem, el)
         let children = Array.from(el.children)
         // Add the rest of the events on the children
-        for (let evtName in elm.events.children) {
-          let event = (<any>elm.events.children)[evtName]
-          children.forEach(child => child.addEventListener(evtName, event.bind(child)))
+        for (let evtName in elem.events.children) {
+          let event = (<any>elem.events.children)[evtName]
+          if (!['function', 'string'].includes(typeof event)) continue
+          children.forEach(child => {
+            if (typeof event == 'function') {
+              child.addEventListener(evtName, event.bind(child))
+              // el.addEventListener(evtName, event.bind(el))
+            } else if (typeof event == 'string') {
+              let theEvent = event.split('.').reduce((acc, key) => acc && (<any>acc)[key] ? (<any>acc)[key] : null, window)
+              if (theEvent) child.addEventListener(evtName, theEvent.bind(child))
+            }
+          })
         }
         children.forEach(child => child.dispatchEvent(new Event('rendered')))
       }

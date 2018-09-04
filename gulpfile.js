@@ -2,14 +2,17 @@ const gulp = require('gulp')
 const ts = require('gulp-typescript')
 const sass = require('gulp-sass')
 const uglify = require('gulp-uglify-es').default
-// const concat = require('gulp-concat')
+const concat = require('gulp-concat')
 
 const projects = {
   server: {
     tsconfig: 'src/server/tsconfig.json'
   },
-  client: {
-    tsconfig: 'src/client/tsconfig.json'
+  admin: {
+    tsconfig: 'src/client/admin/tsconfig.json'
+  },
+  public: {
+    tsconfig: 'src/client/public/tsconfig.json'
   }
 }
 
@@ -28,18 +31,27 @@ gulp.task('copy-views', function (files) {
   return gulp.src('src/server/resources/views/**/*').pipe(gulp.dest('app/resources/views'))
 })
 
-gulp.task('build-client', function () {
-  let tsconfig = projects.client.tsconfig
+gulp.task('build-admin', function () {
+  let tsconfig = projects.admin.tsconfig
+  var tsProject = ts.createProject(tsconfig)
+  let tsResult = tsProject.src().pipe(tsProject())
+  return tsResult.js
+    // .pipe(uglify())
+    .pipe(gulp.dest('public/js'))
+    .on('end', () => {
+      gulp.src(['node_modules/requirejs/require.js', 'public/js/admin.js'])
+        .pipe(concat('admin.js'))
+        .pipe(uglify())
+        .pipe(gulp.dest('public/js'))
+    })
+})
+
+gulp.task('build-public', function () {
+  let tsconfig = projects.public.tsconfig
   var tsProject = ts.createProject(tsconfig)
   let tsResult = tsProject.src().pipe(tsProject())
   return tsResult.js.pipe(uglify())
     .pipe(gulp.dest('public/js'))
-  // .on('end', () => {
-  //   gulp.src(['public/js/main.js', 'node_modules/pug/lib/index.js'])
-  //     .pipe(concat('main.js'))
-  //     .pipe(uglify())
-  //     .pipe(gulp.dest('public/js'))
-  // })
 })
 
 gulp.task('build-sass', function () {
@@ -48,10 +60,10 @@ gulp.task('build-sass', function () {
     .on('error', err => console.error(err))
 })
 
-gulp.task('Build', gulp.series('build-server', 'build-client', 'build-sass', function () {
+gulp.task('build', gulp.series('build-server', 'build-admin', 'build-sass', function () {
   gulp.watch(['src/server/**/*', '!src/server/{resources,resources/**}'], gulp.series('build-server'))
   // gulp.watch(['src/server/resources/**/*', '!src/server/resources/{views,views/**}'], gulp.series('copy-resources'))
   gulp.watch(['src/server/resources/views/**/*'], gulp.series('copy-views'))
-  gulp.watch('src/client/**/*', gulp.series('build-client'))
+  gulp.watch('src/client/**/*', gulp.series('build-admin'))
   gulp.watch('sass/**/*', gulp.series('build-sass'))
 }))

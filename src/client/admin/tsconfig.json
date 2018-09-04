@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "module": "amd",
+    "target": "es2017",
+    "strict": true,
+    "outFile": "../../public/js/admin.js",
+    "lib": [
+      "es2017",
+      "dom",
+      "dom.iterable"
+    ],
+    "jsxFactory": "Tagger.createElement",
+    "jsx": "react"
+  },
+  "include": [
+    "elemental/**/*.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "index.ts"
+  ]
+}

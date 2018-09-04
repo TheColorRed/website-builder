@@ -20,7 +20,6 @@ Router.group('/', { middleware: [startSession, adminLogged] }, () => {
   Router.get('/home', (client) => client.response.render('admin', 'home')).name('admin-home')
   Router.get('/pages', 'admin/pages').name('admin-pages')
   Router.get('/media', 'admin/media').name('admin-media')
-  Router.get('/media/file', 'admin/media@file').name('admin-media-file')
   Router.get('/trash', 'admin/trash').name('admin-trash')
   Router.get('/upload', 'admin/upload').name('admin-upload')
   Router.get('/logout', 'admin@logout').name('admin-logout')

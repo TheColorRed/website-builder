@@ -29,13 +29,14 @@ export async function file(client: Client, mongo: Mongo) {
     { $match: { filename: mongo.sanitize(client.data.get('file')) } },
     { $sort: { uploadDate: -1 } }
   ])
-  let crumbs = client.data.get<string>('file').split('/')
-  return client.response.render('admin', 'file-details', {
-    page: 'file-details',
-    files: await files.toArray(),
-    title: 'Media File',
-    back: crumbs.slice(0, crumbs.length - 1).join('/')
-  })
+  // let crumbs = client.data.get<string>('file').split('/')
+  return client.response.json(await files.toArray())
+  // return client.response.render('admin', 'file-details', {
+  //   page: 'file-details',
+  //   files: await files.toArray(),
+  //   title: 'Media File',
+  //   back: crumbs.slice(0, crumbs.length - 1).join('/')
+  // })
 }
 
 export async function filter(client: Client, mongo: Mongo) {

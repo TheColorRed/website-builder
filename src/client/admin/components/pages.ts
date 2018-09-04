@@ -1,3 +1,5 @@
+import { send } from '../ajax';
+
 interface Page {
   _id: string
   title: string
@@ -22,28 +24,32 @@ namespace builder.pages {
               'span.col-2 Updated'
             ]
           },
-          Tag.each(pages, (page) => {
+          Tag.forEach(pages, (page) => {
             return tag({
               tag: `p.fluid.row[data-page=${page.path}]`,
               children: [
                 {
                   tag: `span.col-1.text-center`,
                   children: [
+                    // Edit page
                     {
-                      tag: `a[href=''].margin-horizontal-5`,
+                      tag: `a[href=''][title='Edit'].margin-horizontal-5`,
                       children: 'i.fa-lg.fa-fw.far.fa-edit'
                     },
+                    // Preview page
                     {
-                      tag: `a[href='${page.path}'][target='_blank'].margin-horizontal-5`,
+                      tag: `a[href='${page.path}'][title='Preview'][target='_blank'].margin-horizontal-5`,
                       children: 'i.fa-lg.fa-fw.far.fa-eye'
                     },
+                    // Move page to trash
                     {
-                      tag: `a[href=''].margin-horizontal-5.red-text`,
+                      tag: `a[href=''][title='Move to trash'].margin-horizontal-5.red-text`,
                       children: 'i.fa-lg.fa-fw.far.fa-trash-alt',
                       events: {
-                        click(e) {
+                        async click(e) {
                           e.preventDefault()
                           $(this).closest('.row').broadcast('spinnerTrash hideTrash')
+                          // send()
                         },
                         hideTrash() { $(this).addClass('hidden') }
                       }
