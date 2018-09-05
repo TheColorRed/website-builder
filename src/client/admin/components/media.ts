@@ -1,4 +1,6 @@
 import { makeDirectoryListing, makeFileListing, makeFilter } from '../templates/admin/media'
+import { $ } from '../elemental/Elemental';
+import { Element } from '../elemental/Element';
 
 export interface DirectoryItem {
   directory: string
@@ -49,7 +51,7 @@ window.addEventListener('popstate', async e => {
 export async function openDirectory(path: string) {
   $('#media-listings').ajax(FILES_URL, { path }, 'get', (data: Listing) => {
     updateState(path)
-    return Tag.join(
+    return Element.join(
       makeDirectoryListing(data.directories),
       makeFileListing(data.files)
     )

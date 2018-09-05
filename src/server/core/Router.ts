@@ -14,7 +14,7 @@ export interface RouterOptions {
 export class Route {
 
   private _name: string = ''
-  private _path!: UrlWithStringQuery
+  private _path: UrlWithStringQuery = { query: '' }
   public routeOptions: RouterOptions = {}
   public groupOptions: RouterOptions[] = []
 
@@ -92,9 +92,11 @@ export type RouteCallback = string | ((client: Client, mongo: Mongo) => void | R
 
 export class Router {
 
-  private static readonly routes: Route[] = []
+  private static readonly _routes: Route[] = []
   private static readonly groupPath: string[] = []
   private static readonly groupOptions: RouterOptions[] = []
+
+  public static get routes() { return this._routes }
 
   public static async route(route: UrlWithStringQuery, client: Client, mongo: Mongo): Promise<Response | null> {
     // Try to find the route
@@ -195,20 +197,20 @@ export class Router {
     args.length == 3 && r.setRouteOptions(args[1])
 
     // Add the route to the list of routes
-    this.routes.push(r)
+    this._routes.push(r)
     return r
   }
 
   public static findByName(name: string) {
-    return this.routes.find(r => r.routeName == name)
+    return this._routes.find(r => r.routeName == name)
   }
 
   public static findByAlias(method: requestMethod, path: string) {
-    return this.routes.find(r => r.method == method && String(r.pathAlias) == path)
+    return this._routes.find(r => r.method == method && String(r.pathAlias) == path)
   }
 
   public static findByPath(method: requestMethod, path: string) {
-    return this.routes.find(r => r.method == method && r.path == path)
+    return this._routes.find(r => r.method == method && r.path == path)
   }
 
   private static async _runMiddleware(middleware: Function[], client: Client) {
@@ -223,7 +225,7 @@ export class Router {
   private static _find(route: UrlWithStringQuery, method: requestMethod) {
     if (!route.pathname) return undefined
     // Find routes based on exact match
-    let theRoute = this.routes.find(r => {
+    let theRoute = this._routes.find(r => {
       if (typeof r.pathAlias == 'string')
         return r.pathAlias == route.pathname && method.toLowerCase() == r.method.toLowerCase()
       else if (r.pathAlias instanceof RegExp)
@@ -237,7 +239,7 @@ export class Router {
       let routeLen = routeCrumbs.length
       let routeDynParamsLen = routeDynParams.length
 
-      for (let r of this.routes) {
+      for (let r of this._routes) {
         if (r.pathAlias instanceof RegExp) break
         let crumbs = r.pathAlias.split('/').filter(i => i.trim().length > 0)
         let dynParams = crumbs.filter(i => i.startsWith(':'))

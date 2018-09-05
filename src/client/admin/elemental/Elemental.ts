@@ -1,20 +1,22 @@
+import { Element, RootElementalElement } from './Element';
+
 declare type formMethod = 'get' | 'post'
 
-function tag(el: Tagger.RootElementalElement | Tagger.RootElementalElement[] | Tagger.Element | string | HTMLElement | DocumentFragment, location?: string | HTMLElement) {
-  let elem: Tagger.Element
-  if (el instanceof Tagger.Element) elem = el
-  else elem = new Tagger.Element(el)
-  // let parent = (<Tagger.RootElementalElement>el).parent
+export function tag(el: RootElementalElement | RootElementalElement[] | Element | string | HTMLElement | DocumentFragment, location?: string | HTMLElement) {
+  let elem: Element
+  if (el instanceof Element) elem = el
+  else elem = new Element(el)
+  // let parent = (<RootElementalElement>el).parent
   // if (!ElementalCore.Elemental.DOM_LOADED) {
   //   ElementalCore.Elemental.ELEMENTS.push({ el: elem, loc: parent || location })
   // }
   return elem
 }
 
-function $(element: HTMLElement | DocumentFragment): Tag
-function $(elements: HTMLElement[]): Tag
-function $(selector: string): Tag
-function $(arg: any) {
+export function $(element: HTMLElement | DocumentFragment): Tag
+export function $(elements: HTMLElement[]): Tag
+export function $(selector: string): Tag
+export function $(arg: any) {
   return new Tag(arg)
 }
 
@@ -92,24 +94,24 @@ class Tag {
     return this
   }
 
-  public static join(...elements: Tagger.Element[]) {
-    return Tagger.Element.join(...elements)
+  public static join(...elements: Element[]) {
+    return Element.join(...elements)
   }
 
-  public static forEach<T>(data: T[], callback: (item: T, index: number, data: T[]) => Tagger.Element) {
-    if (Array.isArray(data)) return Tagger.Element.each<T>(data, callback)
-    return new Tagger.Element('')
+  public static forEach<T>(data: T[], callback: (item: T, index: number, data: T[]) => Element) {
+    if (Array.isArray(data)) return Element.each<T>(data, callback)
+    return new Element('')
   }
 
-  public static create(el: Tagger.RootElementalElement | Tagger.Element | string | HTMLElement | DocumentFragment, location?: string | HTMLElement) {
+  public static create(el: RootElementalElement | Element | string | HTMLElement | DocumentFragment, location?: string | HTMLElement) {
     return tag(el, location)
   }
 
-  public async ajax(url: string, template: (data: any) => Tagger.Element): Promise<void>
-  public async ajax(form: HTMLFormElement, template: (data: any) => Tagger.Element): Promise<void>
-  public async ajax(form: HTMLFormElement, data: { [key: string]: any } | FormData, template: (data: any) => Tagger.Element): Promise<void>
-  public async ajax(url: string, data: { [key: string]: any } | FormData, template: (data: any) => Tagger.Element): Promise<void>
-  public async ajax(url: string, data: { [key: string]: any } | FormData, method: formMethod, template: (data: any) => Tagger.Element): Promise<void>
+  public async ajax(url: string, template: (data: any) => Element): Promise<void>
+  public async ajax(form: HTMLFormElement, template: (data: any) => Element): Promise<void>
+  public async ajax(form: HTMLFormElement, data: { [key: string]: any } | FormData, template: (data: any) => Element): Promise<void>
+  public async ajax(url: string, data: { [key: string]: any } | FormData, template: (data: any) => Element): Promise<void>
+  public async ajax(url: string, data: { [key: string]: any } | FormData, method: formMethod, template: (data: any) => Element): Promise<void>
   public async ajax(...args: any[]): Promise<void> {
     let url = ''
     let data = {}
@@ -122,7 +124,7 @@ class Tag {
     method = args.length == 4 ? args[2] : method
 
 
-    let template: ((data: any) => Tagger.Element) | null = args[args.length - 1]
+    let template: ((data: any) => Element) | null = args[args.length - 1]
 
     if (args.length == 2 && args[0] instanceof HTMLFormElement) {
       url = args[0].action

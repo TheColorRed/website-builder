@@ -1,5 +1,7 @@
 import { DirectoryItem, openDirectory, FileItem, FileDatabaseItem, updateStateAndApplyFilter } from '../../components/media';
 import { send } from '../../ajax';
+import { tag, $ } from '../../elemental/Elemental';
+import { Element } from '../../elemental/Element';
 
 declare const TRASH_URL: string
 declare const FILE_URL: string
@@ -101,7 +103,7 @@ export function makeDirectoryListing(dirs: DirectoryItem[]) {
         }
       ]
     },
-    Tag.forEach(dirs, dir => {
+    Element.each(dirs, dir => {
       return tag({
         tag: `p.fluid.row[data-directory=${dir.directory}]`,
         children: [
@@ -190,7 +192,7 @@ export function makeFileListing(files: FileItem[]) {
           }
         }
       },
-      Tag.forEach(files, (file) => {
+      Element.each(files, (file) => {
         return tag({
           tag: `p.fluid.row.media-file[data-filename='${file.filename}'][data-file='${file.file}'][data-type='${file.metadata.type}']`,
           events: {
@@ -278,7 +280,7 @@ export function fileDetails(files: FileDatabaseItem[]) {
         'span.col-2 File Size'
       ]
     },
-    Tag.forEach(files, (file, index) => {
+    Element.each(files, (file, index) => {
       return tag({
         tag: `p.fluid.row[data-id=${file._id}]`,
         children: [

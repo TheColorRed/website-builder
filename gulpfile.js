@@ -32,18 +32,24 @@ gulp.task('copy-views', function (files) {
 })
 
 gulp.task('build-admin', function () {
-  let tsconfig = projects.admin.tsconfig
-  var tsProject = ts.createProject(tsconfig)
-  let tsResult = tsProject.src().pipe(tsProject())
-  return tsResult.js
-    // .pipe(uglify())
-    .pipe(gulp.dest('public/js'))
-    .on('end', () => {
-      gulp.src(['node_modules/requirejs/require.js', 'public/js/admin.js'])
-        .pipe(concat('admin.js'))
-        .pipe(uglify())
-        .pipe(gulp.dest('public/js'))
-    })
+  try {
+    let tsconfig = projects.admin.tsconfig
+    var tsProject = ts.createProject(tsconfig)
+    let tsResult = tsProject.src().pipe(tsProject())
+    return tsResult.js
+      // .pipe(uglify())
+      .pipe(gulp.dest('public/js'))
+      .on('error', (err) => console.error(err))
+      .on('end', () => {
+        try {
+          gulp.src(['node_modules/requirejs/require.js', 'public/js/admin.js'])
+            .on('error', (err) => console.error(err))
+            .pipe(concat('admin.js'))
+            .pipe(uglify())
+            .pipe(gulp.dest('public/js'))
+        } catch (e) { console.error(e.message) }
+      })
+  } catch (e) { console.error(e.message) }
 })
 
 gulp.task('build-public', function () {

@@ -1,14 +1,5 @@
 import { send } from '../ajax';
 
-interface HTMLElement extends Element {
-  addEventListeners(type: string, listener: (this: HTMLElement, ev: Event) => void, options?: boolean | AddEventListenerOptions): void
-}
-HTMLElement.prototype.addEventListeners = function (...args: any[]) {
-  (<string>args[0]).split(' ').filter(i => i.trim().length > 0).forEach(event => {
-    this.addEventListener(event, args[1], args[2])
-  })
-}
-
 Array.from(document.querySelectorAll<HTMLFormElement>('.upload-drag-drop')).forEach(form => {
   form.addEventListeners('drag dragstart dragend dragover dragenter dragleave drop', function (e) {
     e.preventDefault()

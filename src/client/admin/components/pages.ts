@@ -1,4 +1,6 @@
 import { send } from '../ajax';
+import { tag, $ } from '../elemental/Elemental';
+import { Element } from '../elemental/Element';
 
 interface Page {
   _id: string
@@ -24,7 +26,7 @@ namespace builder.pages {
               'span.col-2 Updated'
             ]
           },
-          Tag.forEach(pages, (page) => {
+          Element.each(pages, (page) => {
             return tag({
               tag: `p.fluid.row[data-page=${page.path}]`,
               children: [
