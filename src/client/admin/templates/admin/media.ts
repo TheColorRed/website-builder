@@ -2,10 +2,7 @@ import { DirectoryItem, openDirectory, FileItem, FileDatabaseItem, updateStateAn
 import { send } from '../../ajax';
 import { tag, $ } from '../../elemental/Elemental';
 import { Element } from '../../elemental/Element';
-
-declare const TRASH_URL: string
-declare const FILE_URL: string
-declare const FILES_URL: string
+import { bytesToSize } from '../helper';
 
 export function makeFilter() {
   let inputInterval = -1
@@ -22,14 +19,15 @@ export function makeFilter() {
                 events: {
                   input(e) {
                     e.preventDefault()
-                    clearInterval(inputInterval)
-                    inputInterval = <number><any>setInterval(updateStateAndApplyFilter, 300)
+                    clearTimeout(inputInterval)
+                    inputInterval = <number><any>setTimeout(updateStateAndApplyFilter, 300)
                   },
                   loaded() {
                     let input = this as HTMLInputElement
                     let locationSearch = window.location.search.replace(/^\?/, '').split('&')
                     let p = (locationSearch.find(i => i.startsWith('query=')) || '').match(/(.+?)=(.+)/)
                     input.value = (p && p[2] ? p[2] : '').trim()
+                    updateStateAndApplyFilter()
                   }
                 }
               },
@@ -41,7 +39,7 @@ export function makeFilter() {
       {
         tag: '.fluid.row',
         events: {
-          children: {
+          $children: {
             click(e) {
               e.preventDefault()
               $(this).toggleClass('active')
@@ -122,7 +120,7 @@ export function makeDirectoryListing(dirs: DirectoryItem[]) {
                       if (row) {
                         let directory = row.getAttribute('data-directory')
                         $(this).addClass('hidden').closest('.row').broadcast('spin')
-                        await send(TRASH_URL, { directory }, 'post')
+                        await send(routes.get('api-admin-delete-media'), { directory }, 'post')
                         $(this).closest('.row').remove()
                       }
                     }
@@ -144,7 +142,7 @@ export function makeDirectoryListing(dirs: DirectoryItem[]) {
           {
             tag: 'span.col-3.overflow-ellipsis',
             events: {
-              children: {
+              $children: {
                 click(e) {
                   e.preventDefault()
                   let path = this.getAttribute('data-path') || ''
@@ -215,7 +213,7 @@ export function makeFileListing(files: FileItem[]) {
                         if (row) {
                           let file = row.getAttribute('data-filename')
                           $(this).addClass('hidden').closest('.row').broadcast('spin hide')
-                          await send(TRASH_URL, { file }, 'post')
+                          await send(routes.get('api-admin-delete-media'), { file }, 'post')
                           $(this).closest('.row').remove()
                         }
                       }
@@ -248,14 +246,14 @@ export function makeFileListing(files: FileItem[]) {
             {
               tag: 'span.col-3.overflow-ellipsis',
               events: {
-                children: {
+                $children: {
                   click(e) {
                     e.preventDefault()
-                    $('#media-listings').ajax(FILE_URL, { file: file.filename }, (data: FileDatabaseItem[]) => fileDetails(data))
+                    $('#media-listings').ajax(routes.get('api-admin-media-file'), { file: file.filename }, (data: FileDatabaseItem[]) => fileDetails(data))
                   }
                 }
               },
-              children: `a[href='${FILE_URL}?file=${file.filename}'][title='${file.filename}'] ${file.file}`
+              children: `a[href='${routes.get('api-admin-media-file')}?file=${file.filename}'][title='${file.filename}'] ${file.file}`
             },
             // Number of files
             `span.col-2 ${file.files}`,
@@ -317,19 +315,4 @@ export function fileDetails(files: FileDatabaseItem[]) {
       })
     })
   ])
-}
-
-function bytesToSize(bytes: number) {
-  if (bytes / 1024 / 1024 / 1024 / 1024 / 1024 > 1)
-    return (bytes / 1024 / 1024 / 1024 / 1024 / 1024).toFixed(2) + ' PB'
-  else if (bytes / 1024 / 1024 / 1024 / 1024 > 1)
-    return (bytes / 1024 / 1024 / 1024 / 1024).toFixed(2) + ' TB'
-  else if (bytes / 1024 / 1024 / 1024 > 1)
-    return (bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB'
-  else if (bytes / 1024 / 1024 > 1)
-    return (bytes / 1024 / 1024).toFixed(2) + ' MB'
-  else if (bytes / 1024 > 1)
-    return (bytes / 1024).toFixed(2) + ' KB'
-  else
-    return bytes + ' Bytes'
 }

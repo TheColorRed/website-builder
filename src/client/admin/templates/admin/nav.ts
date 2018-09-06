@@ -1,35 +1,30 @@
-import { tag } from '../../elemental/Elemental';
-
-export interface RouteList {
-  data: {
-    path: string
-    name: string
-  }
-  get(key: string, defaultValue?: any): any
-  is(key: string): boolean
-  when(key: string, truthy?: any, falsy?: any): any
-}
+import { tag, $ } from '../../elemental/Elemental';
+import { loadPage } from '../helper';
 
 function goToPage(e: Event) {
   e.preventDefault()
   let target = e.currentTarget as HTMLAnchorElement
+  let result = loadPage(target.getAttribute('data-tpl') || '')
+  if (!result) return
   window.history.pushState({}, '', target.href || '/')
+  $(target).closest('ul').find('li').removeClass('active')
+  $(target).closest('li').addClass('active')
 }
 
 export function mainNav(paths: RouteList) {
   return tag({
     tag: 'nav.main>ul',
     events: {
-      children: {
-        click: goToPage
+      $selector: {
+        click: { selector: 'li > a', event: goToPage }
       }
     },
     children: [
-      `li[class="${paths.when('admin-home', 'active')}"]>a[href="${paths.get('admin-home')}"] #{i.fa-lg.fas.fa-fw.fa-home} Home`,
-      `li[class="${paths.when('admin-pages', 'active')}"]>a[href="${paths.get('admin-pages')}"] #{i.fa-lg.fas.fa-fw.fa-columns} Pages`,
+      `li[class="${paths.when('admin-home', 'active')}"]>a[href="${paths.get('admin-home')}"][data-tpl="home"] #{i.fa-lg.fas.fa-fw.fa-home} Home`,
+      `li[class="${paths.when('admin-pages', 'active')}"]>a[href="${paths.get('admin-pages')}"][data-tpl="pages"] #{i.fa-lg.fas.fa-fw.fa-columns} Pages`,
       {
-        tag: `li[class="${paths.when('admin-media', 'active')}"]>a[href="${paths.get('admin-media')}"]`,
-        events: { children: { click: goToPage } },
+        tag: `li[class="${paths.when('admin-media', 'active')}"]>a[href="${paths.get('admin-media')}"][data-tpl="media"]`,
+        events: { $children: { click: goToPage } },
         children: [
           {
             tag: 'span.fa-layers.fa-fw.fa-lg',
@@ -48,7 +43,7 @@ export function mainNav(paths: RouteList) {
       `li[class="${paths.when('admin-comments', 'active')}"]>a[href="${paths.get('admin-comments')}"] #{i.fa-lg.fas.fa-fw.fa-comments} Comments`,
       `li[class="${paths.when('admin-tools', 'active')}"]>a[href="${paths.get('admin-tools')}"] #{i.fa-lg.fas.fa-fw.fa-wrench} Tools`,
       `li[class="${paths.when('admin-settings', 'active')}"]>a[href="${paths.get('admin-settings')}"] #{i.fa-lg.fas.fa-fw.fa-cog} Settings`,
-      `li[class="${paths.when('admin-trash', 'active')}"]>a[href="${paths.get('admin-trash')}"] #{i.fa-lg.fas.fa-fw.fa-trash-alt} Trash`,
+      `li[class="${paths.when('admin-trash', 'active')}"]>a[href="${paths.get('admin-trash')}"][data-tpl="trash"] #{i.fa-lg.fas.fa-fw.fa-trash-alt} Trash`,
       `li[class="${paths.when('admin-logout', 'active')}"]>a[href="${paths.get('admin-logout')}"] #{i.fa-lg.fas.fa-fw.fa-power-off} Logout`,
     ]
   })

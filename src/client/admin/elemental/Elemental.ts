@@ -2,14 +2,10 @@ import { Element, RootElementalElement } from './Element';
 
 declare type formMethod = 'get' | 'post'
 
-export function tag(el: RootElementalElement | RootElementalElement[] | Element | string | HTMLElement | DocumentFragment, location?: string | HTMLElement) {
+export function tag(el: RootElementalElement | (RootElementalElement | string)[] | Element | string | HTMLElement | DocumentFragment, location?: string | HTMLElement) {
   let elem: Element
   if (el instanceof Element) elem = el
   else elem = new Element(el)
-  // let parent = (<RootElementalElement>el).parent
-  // if (!ElementalCore.Elemental.DOM_LOADED) {
-  //   ElementalCore.Elemental.ELEMENTS.push({ el: elem, loc: parent || location })
-  // }
   return elem
 }
 
@@ -170,11 +166,8 @@ class Tag {
     if (csrf.length > 0) options.headers['X-CSRF-Token'] = csrf
     let dta = {}
     try {
-
       let response = await fetch(url, options)
       let text = await response.text()
-
-
       try {
         dta = JSON.parse(text)
       } catch (e) {
@@ -183,7 +176,6 @@ class Tag {
     } catch (e) {
       console.error(e.message)
     }
-
     this.items.forEach(itm => template !== null && template(dta).render(itm))
   }
 

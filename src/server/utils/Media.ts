@@ -5,8 +5,8 @@ import { Mongo } from '../core';
 import { MediaFile, MediaTrash } from '../models';
 
 export class MediaManager {
-
-  public constructor(private mongo: Mongo, private bulkSize: number = 10) { }
+  private bulkSize: number = 20
+  public constructor(private mongo: Mongo) { }
 
   public async saveFile(sourcePath: string, filePath: string) {
     return new Promise<{ error: boolean, message: string }>(resolve => {

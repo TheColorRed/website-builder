@@ -5,11 +5,16 @@ import { MediaTrash } from '../../models';
 
 export async function main(client: Client, mongo: Mongo) {
   let files = await mongo.aggregate<MediaTrash>('trash', [{ $match: { collection: 'fs.files' } }, { $sort: { deleteDate: -1 } }])
-  return client.response.render('admin', 'trash', {
-    page: 'file-details',
-    files: await files.toArray(),
-    title: 'Trash'
-  })
+  if (client.ajax) {
+    return client.response.json(await files.toArray())
+  } else {
+    // return client.response.renderFile('/pages/')
+    // return client.response.render('admin', 'trash', {
+    //   page: 'file-details',
+    //   files: await files.toArray(),
+    //   title: 'Trash'
+    // })
+  }
 }
 
 export async function moveToTrash(client: Client, mongo: Mongo) {

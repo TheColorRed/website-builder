@@ -100,13 +100,6 @@ h6 {
   // padding: ($cell-margin * 2) 0;
   margin-bottom: $cell-margin * 2;
   color: #ffffff;
-
-  button.upload,
-  .btn.upload {
-    svg {
-      margin-right: 10px;
-    }
-  }
 }
 
 .overflow-ellipsis {

@@ -1,4 +1,5 @@
 import { tag, $ } from './Elemental';
+import { publicDecrypt } from 'crypto';
 
 // namespace Tagger {
 
@@ -17,7 +18,7 @@ export interface ElementalEventMap extends ElementEventMap {
   'rendered': Event
   'loaded': Event
   'visibility': Event
-  'children': ElementalEventsTypes
+  '$children': ElementalEventsTypes
   [key: string]: any
 }
 
@@ -26,7 +27,13 @@ export type ElementalEventsTypes = {
 }
 
 export interface ElementalChildrenEvents {
-  children?: ElementalEventsTypes
+  $children?: ElementalEventsTypes
+  $selector?: {
+    [key in keyof (HTMLElementEventMap & ElementalEventMap)]?: {
+      selector: string
+      event: (this: HTMLElement, e: Event) => void
+    }
+  }
 }
 
 export interface ElementalElement {
@@ -109,7 +116,7 @@ export class Element {
   private _renderedTo: HTMLElement | undefined
   public get rootElement() { return this._rootElement }
 
-  public constructor(private el: RootElementalElement | RootElementalElement[] | string | HTMLElement | DocumentFragment) { }
+  public constructor(private el: RootElementalElement | (RootElementalElement | string)[] | string | HTMLElement | DocumentFragment) { }
 
   /**
    * Broadcasts to the tag once rendered
@@ -156,9 +163,12 @@ export class Element {
 
   private setRoot(location?: string | HTMLElement | Element) {
     let loc = document.body
+    // Set the location to render to
     if (location && typeof location == 'string') loc = document.querySelector(location) as HTMLElement
     else if (location instanceof Element) loc = location.rootElement as HTMLElement
     else if (location && location instanceof HTMLElement) loc = location as HTMLElement
+
+    // Build the element
     if (this.el instanceof HTMLElement || this.el instanceof DocumentFragment) this._rootElement = this.el
     else this._rootElement = this.makeElement(this.el, loc)
     return loc
@@ -207,7 +217,7 @@ export class Element {
     return new Element(frag)
   }
 
-  private makeElement<T extends HTMLElement | DocumentFragment>(elem: ElementalElement | ElementalElement[] | Element | HTMLElement | DocumentFragment | string, parent: HTMLElement | DocumentFragment, elementalParent?: ElementalElement): T {
+  private makeElement<T extends HTMLElement | DocumentFragment>(elem: ElementalElement | (ElementalElement | string)[] | Element | HTMLElement | DocumentFragment | string, parent: HTMLElement | DocumentFragment): T {
     if (elem instanceof HTMLElement || elem instanceof DocumentFragment) {
       parent.appendChild(elem)
       return elem as T
@@ -240,22 +250,22 @@ export class Element {
       let t = tag.replace(/\s*\>(?![^[]*])\s*/g, '>')
       if (t.includes('>')) {
         let root = parent
-        let p = typeof elem != 'string' ? elem : elementalParent
-        t.split(/\s*\>(?![^[]*])\s*/).forEach((itm, idx, arr) => {
-          parent = this.makeElement(itm, parent, p)
+        t.split(/\s*\>(?![^[]*])\s*/).forEach(itm => {
+          parent = this.makeElement(itm, parent)
           tag = itm
           typeof elem != 'string' && elem.tag && (elem.tag = itm)
         })
         if (typeof elem != 'string' && elem.children) {
           Array.isArray(elem.children) && elem.children.forEach(child => {
-            let el = this.makeElement(child, parent, p)
-            // el instanceof HTMLElement && this.addEvents(elem, el)
-            // el instanceof HTMLElement && this.addChildEvents(elem, el)
+            this.makeElement(child, parent)
           })
           if (elem && typeof elem.children == 'object') {
-            let el = this.makeElement(<ElementalElement>elem.children, parent, p)
+            this.makeElement(<ElementalElement>elem.children, parent)
           }
         }
+        typeof elem != 'string' && parent instanceof HTMLElement && this.addEvents(elem, parent)
+        typeof elem != 'string' && parent instanceof HTMLElement && this.addChildEvents(elem, parent)
+        typeof elem != 'string' && parent instanceof HTMLElement && this.addSelectorEvents(elem, parent)
         return root.firstChild as T
       }
     }
@@ -272,22 +282,23 @@ export class Element {
       info.properties.forEach(p => el instanceof HTMLElement && el.setAttribute(p, p))
       // console.log(el)
     }
-    parent.appendChild(el)
+    parent && parent.appendChild(el)
 
     // If the element is a string create the element
     if (typeof elem == 'string') {
       info.text.length > 0 && this.makeText(info.text, el)
-      if (el instanceof HTMLElement) {
-        elementalParent ? this.addChildEvents(elementalParent, el) : this.addChildEvents(el)
-        elementalParent ? this.addEvents(elementalParent, el) : this.addEvents(el)
-      }
+      // if (el instanceof HTMLElement) {
+      //   elementalParent ? this.addEvents(elementalParent, el) : this.addEvents(el)
+      //   elementalParent ? this.addChildEvents(elementalParent, el) : this.addChildEvents(el)
+      //   elementalParent ? this.addSelectorEvents(elementalParent, el) : this.addSelectorEvents(el)
+      // }
     }
     // If the element isn't a string create from the object
     else {
       let text = elem.txt && elem.txt.length > 0 ? elem.txt : info.text.length > 0 ? info.text : ''
       text.length > 0 && this.makeText(text, el)
       // Adds the events to the current element
-      el instanceof HTMLElement && this.addEvents(elem, el)
+      // el instanceof HTMLElement && this.addEvents(elem, el)
       // Create the child elements
       if (elem && Array.isArray(elem.children)) {
         // The children elements are an array of items
@@ -300,8 +311,19 @@ export class Element {
         this.makeElement(elem.children as ElementalElement, el)
       }
       // Adds the same event to all the child elements
-      el instanceof HTMLElement && this.addChildEvents(elem, el)
+      // el instanceof HTMLElement && this.addChildEvents(elem, el)
+      // el instanceof HTMLElement && this.addSelectorEvents(elem, el)
     }
+    // let c = typeof elem != 'undefined' && typeof elem != 'string' ? elem :
+    //   typeof elementalParent != 'undefined' && typeof elementalParent != 'string' ? elementalParent : null
+    if (typeof elem != 'undefined' && typeof elem != 'string') {
+      el instanceof HTMLElement && this.addEvents(elem, el)
+      el instanceof HTMLElement && this.addChildEvents(elem, el)
+      el instanceof HTMLElement && this.addSelectorEvents(elem, el)
+    }
+    // else {
+    //   console.log(elem, elementalParent el)
+    // }
     el.dispatchEvent(new Event('rendered'))
     return el as T
     // return (root ? root : el) as T
@@ -345,27 +367,22 @@ export class Element {
       }
       el.dispatchEvent(new Event('created'))
     }
-    // Add events defined within the element that start with "e:"
-    // Multiple events can be attached by separating them with a colon
-    // console.log(elem, el)
-    Array.from(el.attributes).forEach(attr => {
-      if (attr.name.match(/^e:+/)) {
-        // console.log(elem, el)
-        let events = attr.name.split(':')
-        events.shift()
-        events.forEach(evtName => {
-          let event: any = elem && elem.events && (<any>elem.events)[evtName] ? (<any>elem.events)[evtName] : evtName
-          if (typeof event == 'function') {
-            el.addEventListener(evtName, event)
-          } else {
-            attr.value.split(' ').forEach(func => {
-              el.addEventListener(evtName, (<any>window)[func])
-            })
-          }
+  }
+
+  private addSelectorEvents(el: HTMLElement): void
+  private addSelectorEvents(elem: ElementalElement, el: HTMLElement): void
+  private addSelectorEvents(...args: (ElementalElement | HTMLElement)[]): void {
+    let elem = (args.length == 2 ? args[0] : null) as ElementalElement
+    let el = (args.length == 1 ? args[0] : args[1]) as HTMLElement
+    // Add the events to the selector elements
+    if (elem && elem.events && elem.events.$selector) {
+      for (let evtName in elem.events.$selector) {
+        let evt = (<any>elem.events.$selector)[evtName] as { selector: string, event: (e: Event) => void }
+        Array.from(el.querySelectorAll<HTMLElement>(evt.selector)).forEach(itm => {
+          itm.addEventListener(evtName, evt.event)
         })
-        el.removeAttribute(attr.name)
       }
-    })
+    }
   }
 
   private addChildEvents(el: HTMLElement): void
@@ -374,12 +391,12 @@ export class Element {
     let elem = (args.length == 2 ? args[0] : null) as ElementalElement
     let el = (args.length == 1 ? args[0] : args[1]) as HTMLElement
     // Add the events to the child elements
-    if (elem && elem.events && elem.events.children) {
+    if (elem && elem.events && elem.events.$children) {
       // console.log(elem, el)
       let children = Array.from(el.children)
       // Add the rest of the events on the children
-      for (let evtName in elem.events.children) {
-        let event = (<any>elem.events.children)[evtName]
+      for (let evtName in elem.events.$children) {
+        let event = (<any>elem.events.$children)[evtName]
         if (!['function', 'string'].includes(typeof event)) continue
         children.forEach(child => {
           if (typeof event == 'function') {
@@ -393,23 +410,6 @@ export class Element {
       }
       children.forEach(child => child.dispatchEvent(new Event('rendered')))
     }
-    Array.from(el.attributes).forEach(attr => {
-      if (attr.name.match(/^e:+/)) {
-        let events = attr.name.split(':')
-        events.shift()
-        events.forEach(evtName => {
-          let event: any = elem && elem.events && elem.events.children && (<any>elem.events.children)[evtName] ? (<any>elem.events.children)[evtName] : evtName
-          if (typeof event == 'function') {
-            el.addEventListener(evtName, event)
-          } else {
-            attr.value.split(' ').forEach(func => {
-              el.addEventListener(evtName, (<any>window)[func])
-            })
-          }
-        })
-        el.removeAttribute(attr.name)
-      }
-    })
   }
 
   private parseQuerySelector(selectorLogic: string) {
@@ -428,7 +428,7 @@ export class Element {
     // Get the text portion of the logic
     obj.text = (selectorLogic.match(/\s+(?![^[]*]).+/) || [''])[0].trim()
     // Get the id
-    obj.id = (selector.match(/#\w+(?![^[]*])/) || [''])[0].replace('#', '')
+    obj.id = (selector.match(/#[\w-_]+(?![^[]*])/) || [''])[0].replace('#', '')
     // Get the class list
     obj.classList = (selector.match(/\.[\w-_]+(?![^[]*])/g) || []).map(v => v.replace('.', ''))
     // Get the element (defaults to a `div`)

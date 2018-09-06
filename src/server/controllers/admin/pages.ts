@@ -1,7 +1,7 @@
 import { Client, Mongo } from '../../core'
 
 export function main(client: Client) {
-  return client.response.render('admin', 'pages')
+  return client.response.renderFile('/pages/admin/main', { app: 'pages' })
 }
 
 export async function pages(client: Client, mongo: Mongo) {

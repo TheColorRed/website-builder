@@ -31,24 +31,25 @@ gulp.task('copy-views', function (files) {
   return gulp.src('src/server/resources/views/**/*').pipe(gulp.dest('app/resources/views'))
 })
 
-gulp.task('build-admin', function () {
+gulp.task('build-admin', async function () {
   try {
     let tsconfig = projects.admin.tsconfig
     var tsProject = ts.createProject(tsconfig)
     let tsResult = tsProject.src().pipe(tsProject())
+
     return tsResult.js
-      // .pipe(uglify())
+      .pipe(uglify())
       .pipe(gulp.dest('public/js'))
       .on('error', (err) => console.error(err))
-      .on('end', () => {
-        try {
-          gulp.src(['node_modules/requirejs/require.js', 'public/js/admin.js'])
-            .on('error', (err) => console.error(err))
-            .pipe(concat('admin.js'))
-            .pipe(uglify())
-            .pipe(gulp.dest('public/js'))
-        } catch (e) { console.error(e.message) }
-      })
+    // .on('end', () => {
+    //   try {
+    //     gulp.src(['node_modules/requirejs/require.js', 'public/js/admin.js'])
+    //       .on('error', (err) => console.error(err))
+    //       .pipe(concat('admin.js'))
+    //       .pipe(uglify())
+    //       .pipe(gulp.dest('public/js'))
+    //   } catch (e) { console.error(e.message) }
+    // })
   } catch (e) { console.error(e.message) }
 })
 

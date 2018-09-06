@@ -8,20 +8,18 @@ export async function main(client: Client, mongo: Mongo) {
   let path = client.data.request<string>('path', '/media')
   let dir = await directories(mongo, path)
   let dirFiles = await files(mongo, path)
-  let result: any = {
-    directories: await dir.toArray(),
-    files: await dirFiles.toArray()
-  }
 
   // Return ajax response
   if (client.ajax) {
+    let result: any = {
+      directories: await dir.toArray(),
+      files: await dirFiles.toArray()
+    }
     return client.response.json(result)
   }
 
   // Return non-ajax response
-  result.page = 'file-list'
-  result.title = 'Media File Manager'
-  return client.response.render('admin', 'file-list', result)
+  return client.response.renderFile('/pages/admin/main', { app: 'media' })
 }
 
 export async function file(client: Client, mongo: Mongo) {

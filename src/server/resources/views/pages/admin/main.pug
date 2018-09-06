@@ -9,6 +9,7 @@ html(lang="en")
     link(rel="stylesheet", href="/css/themes/default.css")
     link(rel="stylesheet", href="/css/themes/default-admin.css")
     script(src="https://use.fontawesome.com/releases/v5.2.0/js/all.js" defer)
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" defer)
     script(src="/js/admin.js" defer)
     if title
       title #{title} | Admin
@@ -24,8 +25,7 @@ html(lang="en")
             .fluid.row
               .col-6
               .col-6.text-right
-                a(href=`${route.name('admin-upload')}`).btn.upload #[i.fas.fa-cloud-upload-alt] Upload
+                a(href=`${route.name('admin-upload')}`).btn.create.margin-right-10 #[i.fas.fa-fw.fa-plus] Create
+                a(href=`${route.name('admin-upload')}`).btn.upload #[i.fas.fa-fw.fa-cloud-upload-alt] Upload
         .row
-          .col-12#primary-content
-            include ../../mixins/mixins
-            block content
+          .col-12#primary-content(data-app=`${app}`)

@@ -129,6 +129,7 @@ export async function files(mongo: Mongo, directory: string, filter?: MediaFilte
       }
     },
     { $addFields: { filename: '$_id' } },
-    { $project: { _id: 0 } }
+    { $project: { _id: 0 } },
+    { $sort: { filename: 1 } }
   ])
 }

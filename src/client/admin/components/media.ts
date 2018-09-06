@@ -1,3 +1,5 @@
+import { loadPage } from '../templates/helper';
+
 import { makeDirectoryListing, makeFileListing, makeFilter } from '../templates/admin/media'
 import { $ } from '../elemental/Elemental';
 import { Element } from '../elemental/Element';
@@ -33,13 +35,17 @@ export interface Listing {
   files: FileItem[]
 }
 
-declare const FILES_URL: string
+let path: string
 
-let locationSearch = window.location.search.replace(/^\?/, '').split('&')
-let p = (locationSearch.find(i => i.startsWith('path=')) || '').match(/(.+?)=(.+)/)
-let path = p && p[2] ? p[2] : ''
-makeFilter().render('#media-filters')
-openDirectory(path)
+export function load() {
+  loadPage('media')
+
+  let locationSearch = window.location.search.replace(/^\?/, '').split('&')
+  let p = (locationSearch.find(i => i.startsWith('path=')) || '').match(/(.+?)=(.+)/)
+  path = p && p[2] ? p[2] : ''
+  makeFilter().render('#media-filters')
+  openDirectory(path)
+}
 
 window.addEventListener('popstate', async e => {
   e.preventDefault()
@@ -49,7 +55,7 @@ window.addEventListener('popstate', async e => {
 })
 
 export async function openDirectory(path: string) {
-  $('#media-listings').ajax(FILES_URL, { path }, 'get', (data: Listing) => {
+  $('#media-listings').ajax(routes.get('api-admin-media-files'), { path }, 'get', (data: Listing) => {
     updateState(path)
     return Element.join(
       makeDirectoryListing(data.directories),
@@ -66,7 +72,7 @@ export function updateState(pathname?: string) {
   let types = getTypes()
   let query = getQuery()
   let f = []
-  let p = pathname ? pathname : path
+  let p = pathname ? pathname : path || ''
 
   p.length > 0 && f.push(`path=${p}`)
   query.length > 0 && f.push(`query=${query}`)
@@ -83,7 +89,7 @@ export function updateStateAndApplyFilter() {
 export function applyFilter() {
   let types = getTypes()
   let query = getQuery()
-  Array.from(document.querySelectorAll<HTMLElement>('#media-listings .media-file')).forEach(row => {
+  Array.from(document.querySelectorAll<HTMLElement>('.media-file')).forEach(row => {
     let type = row.getAttribute('data-type') || ''
     let file = row.getAttribute('data-file') || ''
     if (

@@ -1,9 +1,11 @@
-let main = document.querySelector('[data-main]')
-if (main) {
-  let dataMain = main.getAttribute('data-main')
-  if (dataMain) {
-    requirejs([`components/${dataMain}`])
-  }
+interface RouteList {
+  data: {
+    path: string
+    name: string
+  }[]
+  get(key: string, defaultValue?: any): any
+  is(key: string): boolean
+  when(key: string, truthy?: any, falsy?: any): any
 }
 
 interface HTMLElement extends Element {
@@ -15,6 +17,21 @@ HTMLElement.prototype.addEventListeners = function (...args: any[]) {
   })
 }
 
+const routes: RouteList = {
+  data: [],
+  get(key: string, defaultValue: any = '') {
+    let item = this.data.find(d => d.name == key)
+    return item && item.path || defaultValue
+  },
+  is(key: string) {
+    let path = window.location.pathname
+    return !!this.data.find(i => i.name == key && i.path == path)
+  },
+  when(key: string, truthy: any = '', falsy: any = '') {
+    let path = window.location.pathname
+    return !!this.data.find(i => i.name == key && i.path == path) ? truthy : falsy
+  }
+}
 requirejs(['ajax'], function (ajax: any) {
   Array.from(document.querySelectorAll<HTMLFormElement>('form.ajax')).forEach(form => {
     form.addEventListener('submit', async function (e) {
@@ -27,23 +44,22 @@ requirejs(['ajax'], function (ajax: any) {
     })
   })
   ajax.send('/admin/api/routes/list').then((data: { path: string, name: string }[]) => {
-    let r = {
-      data,
-      get(key: string, defaultValue: any = '') {
-        let item = this.data.find(d => d.name == key)
-        return item && item.path || defaultValue
-      },
-      is(key: string) {
-        let path = window.location.pathname
-        return !!this.data.find(i => i.name == key && i.path == path)
-      },
-      when(key: string, truthy: any = '', falsy: any = '') {
-        let path = window.location.pathname
-        return !!this.data.find(i => i.name == key && i.path == path) ? truthy : falsy
-      }
-    }
+    routes.data = data
+    console.log(data)
+
     requirejs(['templates/admin/nav'], function (nav: any) {
-      nav.mainNav(r).render('#main-nav')
+      nav.mainNav(routes).render('#main-nav')
+      let main = document.querySelector('[data-app]')
+      if (main) {
+        let dataMain = main.getAttribute('data-app')
+        if (dataMain) {
+          requirejs([`components/${dataMain}`], function (component: any) {
+            if (component && component.load) {
+              component.load()
+            }
+          })
+        }
+      }
     })
   })
 })
