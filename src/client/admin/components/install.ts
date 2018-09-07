@@ -1,4 +1,4 @@
-import { send, toKeyValue, submit } from '../ajax';
+import { send, toKeyValue, submit } from '../../util/ajax';
 
 declare const TEST_CONN: string
 declare const REDIRECT_TO: string

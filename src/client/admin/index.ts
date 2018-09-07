@@ -11,6 +11,7 @@ interface RouteList {
 interface HTMLElement extends Element {
   addEventListeners(type: string, listener: (this: HTMLElement, ev: Event) => void, options?: boolean | AddEventListenerOptions): void
 }
+
 HTMLElement.prototype.addEventListeners = function (...args: any[]) {
   (<string>args[0]).split(' ').filter(i => i.trim().length > 0).forEach(event => {
     this.addEventListener(event, args[1], args[2])
@@ -32,7 +33,23 @@ const routes: RouteList = {
     return !!this.data.find(i => i.name == key && i.path == path) ? truthy : falsy
   }
 }
-requirejs(['ajax'], function (ajax: any) {
+
+let queryBuilder: any
+
+(function (history) {
+  let pushState = history.pushState
+  history.pushState = function () {
+    pushState.apply(history, arguments)
+    queryBuilder.update()
+    window.dispatchEvent(new Event('pushstate'))
+  }
+})(window.history)
+
+requirejs(['util/queryBuilder'], function (module: any) {
+  queryBuilder = module.QueryBuilder.create()
+})
+
+requirejs(['util/ajax'], function (ajax: any) {
   Array.from(document.querySelectorAll<HTMLFormElement>('form.ajax')).forEach(form => {
     form.addEventListener('submit', async function (e) {
       e.preventDefault()
@@ -47,13 +64,13 @@ requirejs(['ajax'], function (ajax: any) {
     routes.data = data
     console.log(data)
 
-    requirejs(['templates/admin/nav'], function (nav: any) {
+    requirejs(['admin/templates/admin/nav'], function (nav: any) {
       nav.mainNav(routes).render('#main-nav')
       let main = document.querySelector('[data-app]')
       if (main) {
         let dataMain = main.getAttribute('data-app')
         if (dataMain) {
-          requirejs([`components/${dataMain}`], function (component: any) {
+          requirejs([`admin/components/${dataMain}`], function (component: any) {
             if (component && component.load) {
               component.load()
             }

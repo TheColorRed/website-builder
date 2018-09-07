@@ -1,6 +1,6 @@
 import { $, tag } from '../elemental/Elemental';
-import { Listing } from '../components/media';
-import { makeFilter, makeDirectoryListing, makeFileListing } from './admin/media';
+import { Listing, FileDatabaseItem } from '../components/media';
+import { makeFilter, makeDirectoryListing, makeFileListing, makeBreadCrumbs, makeFileDetails } from './admin/media';
 import { Element } from '../elemental/Element';
 import { makePage, Page } from './admin/pages';
 import { makeHome } from './admin/home';
@@ -12,15 +12,28 @@ export function loadPage(page: string) {
       makeHome().render('#primary-content')
       return true
     case 'media':
-      $('#primary-content').ajax(routes.get('api-admin-media-files'), (data: Listing) => {
-        return Element.join(makeFilter(), tag({
-          tag: '.well#media-listings',
-          children: [
-            makeDirectoryListing(data.directories),
-            makeFileListing(data.files)
-          ]
-        }))
-      })
+      if (!!queryBuilder.get('file')) {
+        $('#primary-content').ajax(routes.get('api-admin-media-file'), { file: queryBuilder.get('file') }, (data: FileDatabaseItem[]) => {
+          return Element.join(makeFilter(), tag({
+            tag: '.well#media-listings',
+            children: [
+              makeBreadCrumbs(),
+              makeFileDetails(data)
+            ]
+          }))
+        })
+      } else {
+        $('#primary-content').ajax(routes.get('api-admin-media-files'), { path: queryBuilder.get('path') }, (data: Listing) => {
+          return Element.join(makeFilter(), tag({
+            tag: '.well#media-listings',
+            children: [
+              makeBreadCrumbs(),
+              makeDirectoryListing(data.directories),
+              makeFileListing(data.files)
+            ]
+          }))
+        })
+      }
       return true
     case 'pages':
       $('#primary-content').ajax(routes.get('api-admin-pages'), (data: Page[]) => makePage(data))

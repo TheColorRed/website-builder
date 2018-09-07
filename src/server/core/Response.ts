@@ -12,6 +12,7 @@ export class Response {
 
   private _filePath: string | null = null
   private _media: MediaFile | null = null
+  private _buffer: Buffer | null = null
 
   public constructor(private client: Client, public _body: string = '', public _headers: OutgoingHttpHeaders = {
     'Content-Type': 'text/html'
@@ -23,6 +24,7 @@ export class Response {
   public get contentLength(): number { return this._length }
   public get filePath(): string | null { return this._filePath }
   public get media(): MediaFile | null { return this._media }
+  public get buffer(): Buffer | null { return this._buffer }
 
   public setContentLength(length: number) {
     this._length = length
@@ -64,6 +66,11 @@ export class Response {
     this._media = data
     let contentType = mime.lookup(data.filename) || 'application/octet-stream'
     return this.setHeader('Content-Type', contentType).setContentLength(data.length)
+  }
+
+  public setBuffer(data: Buffer) {
+    this._buffer = data
+    return this.setContentLength(data.byteLength)
   }
 
   public render(section: string, page: string, options: Options & LocalsObject = {}) {

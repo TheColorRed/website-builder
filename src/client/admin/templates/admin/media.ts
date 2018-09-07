@@ -1,5 +1,5 @@
-import { DirectoryItem, openDirectory, FileItem, FileDatabaseItem, updateStateAndApplyFilter } from '../../components/media';
-import { send } from '../../ajax';
+import { DirectoryItem, openDirectory, FileItem, FileDatabaseItem, updateStateAndApplyFilter, updateState } from '../../components/media';
+import { send } from '../../../util/ajax';
 import { tag, $ } from '../../elemental/Elemental';
 import { Element } from '../../elemental/Element';
 import { bytesToSize } from '../helper';
@@ -59,10 +59,46 @@ export function makeFilter() {
   })
 }
 
-function getPath() {
-  let locationSearch = window.location.search.replace(/^\?/, '').split('&')
-  let p = (locationSearch.find(i => i.startsWith('path=')) || '').match(/(.+?)=(.+)/)
-  return (p && p[2] ? p[2] : '').split('/')
+// function getPath() {
+//   let locationSearch = window.location.search.replace(/^\?/, '').split('&')
+//   let p = (locationSearch.find(i => i.startsWith('path=')) || '').match(/(.+?)=(.+)/)
+//   return (p && p[2] ? p[2] : '').split('/')
+// }
+
+function clickBreadcrumb(this: HTMLElement, e: Event) {
+  e.preventDefault()
+  let path = this.getAttribute('data-path')
+  openDirectory(path || '')
+}
+
+export function makeBreadCrumbs() {
+  let path = queryBuilder.get('path')
+  let file = queryBuilder.get('file')
+  let hasPath = !!path
+  let hasFile = !!file
+  return tag({
+    tag: 'ul.breadcrumbs',
+    events: {
+      $selector: {
+        click: { selector: 'li > a', event: clickBreadcrumb }
+      }
+    },
+    children: [
+      {
+        render: !hasPath && !hasFile,
+        tag: 'li media'
+      },
+      Element.each((hasFile ? file : path).split('/').filter(String), (crumb, idx, arr) => {
+        if ((idx < arr.length - 1 && arr.length > 1) || hasFile) {
+          if (hasFile && idx == arr.length - 1) {
+            return tag([`li>strong ${crumb}`])
+          }
+          return tag([`li>a[href=""][data-path="/${arr.slice(0, idx + 1).join('/')}"] ${crumb}`])
+        }
+        return tag([`li>strong ${crumb}`])
+      })
+    ]
+  })
 }
 
 export function makeDirectoryListing(dirs: DirectoryItem[]) {
@@ -70,35 +106,10 @@ export function makeDirectoryListing(dirs: DirectoryItem[]) {
     // Listing header
     {
       tag: 'p.fluid.row.text-bold',
-      render: getPath().length > 2 || dirs.length > 0,
+      render: dirs.length > 0,
       children: [
         'span.col-1.text-center Actions',
         'span.col-3 Folder'
-      ]
-    },
-    {
-      tag: 'p.fluid.row.up-level',
-      render: getPath().length > 2,
-      children: [
-        'span.col-1',
-        // Up one level
-        {
-          tag: 'span.col-3',
-          children: {
-            tag: 'a[href=""]',
-            events: {
-              click(e) {
-                e.preventDefault()
-                let path = getPath().slice(0, getPath().length - 1).join('/')
-                openDirectory(path)
-              }
-            },
-            children: [
-              'i.fas.fa-fw.fa-level-up-alt',
-              'span Up one level'
-            ]
-          }
-        }
       ]
     },
     Element.each(dirs, dir => {
@@ -192,7 +203,7 @@ export function makeFileListing(files: FileItem[]) {
       },
       Element.each(files, (file) => {
         return tag({
-          tag: `p.fluid.row.media-file[data-filename='${file.filename}'][data-file='${file.file}'][data-type='${file.metadata.type}']`,
+          tag: `p.fluid.row.media-file.middle[data-filename='${file.filename}'][data-file='${file.file}'][data-type='${file.metadata.type}']`,
           events: {
             // Row visibility changed
             visibility: () => $('.filter-count').dispatch('update')
@@ -249,11 +260,29 @@ export function makeFileListing(files: FileItem[]) {
                 $children: {
                   click(e) {
                     e.preventDefault()
-                    $('#media-listings').ajax(routes.get('api-admin-media-file'), { file: file.filename }, (data: FileDatabaseItem[]) => fileDetails(data))
+                    $('#media-listings').ajax(routes.get('api-admin-media-file'), { file: file.filename }, (data: FileDatabaseItem[]) => {
+                      queryBuilder.set('file', file.filename)
+                      updateState()
+                      return tag([
+                        makeBreadCrumbs(),
+                        makeFileDetails(data)
+                      ])
+                    })
                   }
                 }
               },
-              children: `a[href='${routes.get('api-admin-media-file')}?file=${file.filename}'][title='${file.filename}'] ${file.file}`
+              children: {
+                tag: `a.middle.inline-flex[href='${routes.get('api-admin-media-file')}?file=${file.filename}'][title='${file.filename}']`,
+                children: [
+                  {
+                    render: file.metadata.type == 'image',
+                    tag: `img.margin-right-5[src="${file.filename}?w=16"][style="max-height: 16px"]`
+                  }, {
+                    tag: 'span',
+                    txt: file.file
+                  }
+                ]
+              }
             },
             // Number of files
             `span.col-2 ${file.files}`,
@@ -266,7 +295,7 @@ export function makeFileListing(files: FileItem[]) {
   })
 }
 
-export function fileDetails(files: FileDatabaseItem[]) {
+export function makeFileDetails(files: FileDatabaseItem[]) {
   return tag([
     {
       render: files.length > 0,

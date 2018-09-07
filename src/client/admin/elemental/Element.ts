@@ -287,11 +287,6 @@ export class Element {
     // If the element is a string create the element
     if (typeof elem == 'string') {
       info.text.length > 0 && this.makeText(info.text, el)
-      // if (el instanceof HTMLElement) {
-      //   elementalParent ? this.addEvents(elementalParent, el) : this.addEvents(el)
-      //   elementalParent ? this.addChildEvents(elementalParent, el) : this.addChildEvents(el)
-      //   elementalParent ? this.addSelectorEvents(elementalParent, el) : this.addSelectorEvents(el)
-      // }
     }
     // If the element isn't a string create from the object
     else {

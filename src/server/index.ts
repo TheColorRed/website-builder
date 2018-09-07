@@ -50,6 +50,9 @@ let server = http.createServer((req, res) => {
         .on('data', (chunk: string | Buffer) => res.write(chunk))
         .on('end', () => res.end())
         .on('error', () => res.end())
+    } else if (response.buffer) {
+      res.write(response.buffer)
+      res.end()
     } else {
       res.write(response.body)
       res.end()

@@ -1,8 +1,9 @@
 import { loadPage } from '../templates/helper';
 
-import { makeDirectoryListing, makeFileListing, makeFilter } from '../templates/admin/media'
+import { makeDirectoryListing, makeFileListing, makeFilter, makeBreadCrumbs } from '../templates/admin/media'
 import { $ } from '../elemental/Elemental';
 import { Element } from '../elemental/Element';
+import { QueryBuilder } from '../../util/queryBuilder';
 
 export interface DirectoryItem {
   directory: string
@@ -35,29 +36,26 @@ export interface Listing {
   files: FileItem[]
 }
 
-let path: string
+let qb = queryBuilder as QueryBuilder
 
 export function load() {
+  !qb.get('path').match(/^\/media/) && qb.set('path', '/media')
   loadPage('media')
-
-  let locationSearch = window.location.search.replace(/^\?/, '').split('&')
-  let p = (locationSearch.find(i => i.startsWith('path=')) || '').match(/(.+?)=(.+)/)
-  path = p && p[2] ? p[2] : ''
   makeFilter().render('#media-filters')
-  openDirectory(path)
 }
 
 window.addEventListener('popstate', async e => {
   e.preventDefault()
-  let path = window.location.search.replace(/^\?/, '').split('&').find(i => i.startsWith('path='))
-  if (path) path = path.split('=').pop()
-  path && openDirectory(path)
+  openDirectory(qb.get('path'))
 })
 
 export async function openDirectory(path: string) {
+  if (!path) return
   $('#media-listings').ajax(routes.get('api-admin-media-files'), { path }, 'get', (data: Listing) => {
+    qb.remove('file')
     updateState(path)
     return Element.join(
+      makeBreadCrumbs(),
       makeDirectoryListing(data.directories),
       makeFileListing(data.files)
     )
@@ -71,13 +69,13 @@ export function updateState(pathname?: string) {
   updatingState = true
   let types = getTypes()
   let query = getQuery()
-  let f = []
-  let p = pathname ? pathname : path || ''
+  let p = pathname ? pathname : qb.get('path') || ''
 
-  p.length > 0 && f.push(`path=${p}`)
-  query.length > 0 && f.push(`query=${query}`)
-  types.length > 0 && f.push(`types=${types.join(',')}`)
-  history.pushState({}, '', (f.length > 0 ? '?' : window.location.pathname) + f.join('&'))
+  p.length > 0 && qb.set('path', p)
+  query.length > 0 && qb.set('query', query)
+  types.length > 0 && qb.set('types', types.join(','))
+  history.pushState({}, '', qb.toString())
+
   updatingState = false
 }
 

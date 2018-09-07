@@ -14,6 +14,7 @@
   },
   "include": [
     "elemental/**/*.ts",
+    "../util/**/*.ts",
     "**/*.ts",
     "**/*.tsx",
     "index.ts"

@@ -1,4 +1,4 @@
-import { send } from '../ajax';
+import { send } from '../../util/ajax';
 
 Array.from(document.querySelectorAll<HTMLFormElement>('.upload-drag-drop')).forEach(form => {
   form.addEventListeners('drag dragstart dragend dragover dragenter dragleave drop', function (e) {

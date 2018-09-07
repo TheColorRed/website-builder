@@ -2,7 +2,8 @@ import { GridFSBucket, ObjectID } from 'mongodb'
 import * as fs from 'fs'
 import * as mime from 'mime-types'
 import { Mongo } from '../core';
-import { MediaFile, MediaTrash } from '../models';
+import { MediaFile, MediaTrash } from '../models'
+const Canvas = require('canvas-prebuilt')
 
 export class MediaManager {
   private bulkSize: number = 20
@@ -128,5 +129,51 @@ export class MediaManager {
       return ok
     }
     return false
+  }
+
+  public async downsizeImage(file: MediaFile, width: number, height: number) {
+    // Load the image from the database
+    let img: any = await new Promise(resolve => {
+      let imgData: string = ''
+      let bucket = new GridFSBucket(this.mongo.db)
+      let id = file._id instanceof ObjectID ? file._id : new ObjectID(file._id)
+      bucket.openDownloadStream(id)
+        .on('data', (chunk: Buffer) => imgData += chunk.toString('binary'))
+        .once('end', () => {
+          let img = new Canvas.Image
+          img.onload = () => resolve(img)
+          img.onerror = (err: Error) => console.error(err)
+          img.src = Buffer.from(imgData, 'binary')
+        })
+    })
+
+    // Don't allow the image to be scaled larger than it already is or smaller than 1
+    width = Math.max(Math.min(img.width, width), 0)
+    height = Math.max(Math.min(img.height, height), 0)
+
+    // If only the width or the height is set
+    if (width == 0 || height == 0) {
+      // Set the height based on the width
+      if (height == 0) {
+        let ratio = width / img.width
+        height = img.height * ratio
+      }
+      // Set the width based on the height
+      else if (width == 0) {
+        let ratio = height / img.height
+        width = img.width * ratio
+      }
+    }
+
+    // If the width or height is 0 make it 1
+    // A canvas with a width and/or height of zero is invalid
+    width = width == 0 ? 1 : width
+    height = height == 0 ? 1 : height
+
+    // Create the canvas based on the new width/height
+    let canvas: any = new Canvas(width, height)
+    let ctx = canvas.getContext('2d')
+    ctx.drawImage(img, 0, 0, width, height)
+    return canvas.toBuffer('binary') as Buffer
   }
 }

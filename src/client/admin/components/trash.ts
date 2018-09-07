@@ -1,4 +1,4 @@
-import { send } from '../ajax';
+import { send } from '../../util/ajax';
 import { loadPage } from '../templates/helper';
 
 export function load() {

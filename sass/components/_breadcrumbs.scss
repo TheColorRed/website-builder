@@ -1,0 +1,20 @@
+ul,
+ol {
+  &.breadcrumbs {
+    padding: 0;
+    list-style-type: none;
+    display: inline-flex;
+    flex-direction: row;
+
+    & > li {
+      &::before {
+        content: "/";
+        padding: 0 10px;
+      }
+
+      &:first-child::before {
+        padding-left: 0;
+      }
+    }
+  }
+}
