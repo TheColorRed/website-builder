@@ -1,5 +1,5 @@
-import { tag, $ } from '../../elemental/Elemental';
-import { Element } from '../../elemental/Element';
+import { tag, $ } from '../../../util/elemental/Elemental';
+import { Element } from '../../../util/elemental/Element';
 
 export interface Page {
   _id: string

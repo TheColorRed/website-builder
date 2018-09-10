@@ -6,7 +6,10 @@
     "removeComments": true,
     "outDir": "../../app",
     "declarationMap": true,
-    "inlineSourceMap": true
+    "inlineSourceMap": true,
+    "types": [
+      "node"
+    ]
   },
   "include": [
     "**/*.ts"

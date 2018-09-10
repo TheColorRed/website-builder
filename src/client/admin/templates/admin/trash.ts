@@ -1,7 +1,8 @@
-import { tag } from '../../elemental/Elemental';
-import { Element } from '../../elemental/Element';
-import { bytesToSize } from '../helper';
+import { routes } from '../../../util/routes';
 import { send } from '../../../util/ajax';
+import { tag } from '../../../util/elemental/Elemental';
+import { bytesToSize } from '../helper';
+import { Element } from '../../../util/elemental/Element';
 
 async function trashAction(e: Event) {
   // Array.from(document.querySelectorAll<HTMLElement>('.trash-delete, .trash-restore')).forEach(el => {

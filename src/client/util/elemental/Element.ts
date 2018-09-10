@@ -1,5 +1,4 @@
-import { tag, $ } from './Elemental';
-import { publicDecrypt } from 'crypto';
+import { tag, $ } from './Elemental'
 
 // namespace Tagger {
 
@@ -19,6 +18,12 @@ export interface ElementalEventMap extends ElementEventMap {
   'loaded': Event
   'visibility': Event
   '$children': ElementalEventsTypes
+  '$selector': {
+    [key in keyof (HTMLElementEventMap & ElementalEventMap)]?: {
+      selector: string
+      event: (this: HTMLElement, e: Event) => void
+    }
+  }
   [key: string]: any
 }
 

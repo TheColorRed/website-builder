@@ -1,19 +1,21 @@
-import { $, tag } from '../elemental/Elemental';
 import { Listing, FileDatabaseItem } from '../components/media';
 import { makeFilter, makeDirectoryListing, makeFileListing, makeBreadCrumbs, makeFileDetails } from './admin/media';
-import { Element } from '../elemental/Element';
 import { makePage, Page } from './admin/pages';
 import { makeHome } from './admin/home';
 import { makeTrash } from './admin/trash';
+import { globalQuery } from '../../util/queryBuilder';
+import { routes } from '../../util/routes';
+import { Element } from '../../util/elemental/Element';
+import { $, tag } from '../../util/elemental/Elemental';
 
-export function loadPage(page: string) {
+export async function loadPage(page: string) {
   switch (page) {
     case 'home':
       makeHome().render('#primary-content')
       return true
     case 'media':
-      if (!!queryBuilder.get('file')) {
-        $('#primary-content').ajax(routes.get('api-admin-media-file'), { file: queryBuilder.get('file') }, (data: FileDatabaseItem[]) => {
+      if (!!globalQuery.get('file')) {
+        await $('#primary-content').ajax(routes.get('api-admin-media-file'), { file: globalQuery.get('file') }, (data: FileDatabaseItem[]) => {
           return Element.join(makeFilter(), tag({
             tag: '.well#media-listings',
             children: [
@@ -23,7 +25,7 @@ export function loadPage(page: string) {
           }))
         })
       } else {
-        $('#primary-content').ajax(routes.get('api-admin-media-files'), { path: queryBuilder.get('path') }, (data: Listing) => {
+        await $('#primary-content').ajax(routes.get('api-admin-media-files'), { path: globalQuery.get('path') }, (data: Listing) => {
           return Element.join(makeFilter(), tag({
             tag: '.well#media-listings',
             children: [
@@ -36,10 +38,10 @@ export function loadPage(page: string) {
       }
       return true
     case 'pages':
-      $('#primary-content').ajax(routes.get('api-admin-pages'), (data: Page[]) => makePage(data))
+      await $('#primary-content').ajax(routes.get('api-admin-pages'), (data: Page[]) => makePage(data))
       return true
     case 'trash':
-      $('#primary-content').ajax(routes.get('api-admin-trash'), (data: Page[]) => {
+      await $('#primary-content').ajax(routes.get('api-admin-trash'), (data: Page[]) => {
         return makeTrash(data)
       })
       return true

@@ -1,10 +1,10 @@
-import { tag, $ } from '../../elemental/Elemental';
 import { loadPage } from '../helper';
+import { $, tag } from '../../../util/elemental/Elemental';
 
-function goToPage(e: Event) {
+async function goToPage(e: Event) {
   e.preventDefault()
   let target = e.currentTarget as HTMLAnchorElement
-  let result = loadPage(target.getAttribute('data-tpl') || '')
+  let result = await loadPage(target.getAttribute('data-tpl') || '')
   if (!result) return
   window.history.pushState({}, '', target.href || '/')
   $(target).closest('ul').find('li').removeClass('active')

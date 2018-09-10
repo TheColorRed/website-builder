@@ -1,8 +1,10 @@
 import { DirectoryItem, openDirectory, FileItem, FileDatabaseItem, updateStateAndApplyFilter, updateState } from '../../components/media';
 import { send } from '../../../util/ajax';
-import { tag, $ } from '../../elemental/Elemental';
-import { Element } from '../../elemental/Element';
 import { bytesToSize } from '../helper';
+import { globalQuery } from '../../../util/queryBuilder';
+import { $, tag } from '../../../util/elemental/Elemental';
+import { Element } from '../../../util/elemental/Element';
+import { routes } from '../../../util/routes';
 
 export function makeFilter() {
   let inputInterval = -1
@@ -72,8 +74,8 @@ function clickBreadcrumb(this: HTMLElement, e: Event) {
 }
 
 export function makeBreadCrumbs() {
-  let path = queryBuilder.get('path')
-  let file = queryBuilder.get('file')
+  let path = globalQuery.get('path')
+  let file = globalQuery.get('file')
   let hasPath = !!path
   let hasFile = !!file
   return tag({
@@ -86,7 +88,7 @@ export function makeBreadCrumbs() {
     children: [
       {
         render: !hasPath && !hasFile,
-        tag: 'li media'
+        tag: 'li>strong media'
       },
       Element.each((hasFile ? file : path).split('/').filter(String), (crumb, idx, arr) => {
         if ((idx < arr.length - 1 && arr.length > 1) || hasFile) {
@@ -255,13 +257,13 @@ export function makeFileListing(files: FileItem[]) {
             },
             // Filename
             {
-              tag: 'span.col-3.overflow-ellipsis',
+              tag: 'span.col-3.overflow-ellipsis.middle[style="height: 32px"]',
               events: {
                 $children: {
                   click(e) {
                     e.preventDefault()
                     $('#media-listings').ajax(routes.get('api-admin-media-file'), { file: file.filename }, (data: FileDatabaseItem[]) => {
-                      queryBuilder.set('file', file.filename)
+                      globalQuery.set('file', file.filename)
                       updateState()
                       return tag([
                         makeBreadCrumbs(),
@@ -275,8 +277,11 @@ export function makeFileListing(files: FileItem[]) {
                 tag: `a.middle.inline-flex[href='${routes.get('api-admin-media-file')}?file=${file.filename}'][title='${file.filename}']`,
                 children: [
                   {
-                    render: file.metadata.type == 'image',
-                    tag: `img.margin-right-5[src="${file.filename}?w=16"][style="max-height: 16px"]`
+                    tag: `span.margin-right-5.center[style="width: 32px"]`,
+                    children: {
+                      render: file.metadata.type == 'image',
+                      tag: `img[src="${file.filename}?h=32"][style="max-width: 32px"]`
+                    }
                   }, {
                     tag: 'span',
                     txt: file.file

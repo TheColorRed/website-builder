@@ -9,6 +9,9 @@
       "dom",
       "dom.iterable"
     ],
+    "types": [
+      "requirejs"
+    ],
     "jsxFactory": "Tagger.createElement",
     "jsx": "react"
   },

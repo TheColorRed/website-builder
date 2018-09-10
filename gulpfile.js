@@ -31,7 +31,7 @@ gulp.task('copy-views', function (files) {
   return gulp.src('src/server/resources/views/**/*').pipe(gulp.dest('app/resources/views'))
 })
 
-gulp.task('build-admin', async function () {
+gulp.task('build-admin', function () {
   try {
     let tsconfig = projects.admin.tsconfig
     var tsProject = ts.createProject(tsconfig)
@@ -41,15 +41,6 @@ gulp.task('build-admin', async function () {
       .pipe(uglify())
       .pipe(gulp.dest('public/js'))
       .on('error', (err) => console.error(err))
-    // .on('end', () => {
-    //   try {
-    //     gulp.src(['node_modules/requirejs/require.js', 'public/js/admin.js'])
-    //       .on('error', (err) => console.error(err))
-    //       .pipe(concat('admin.js'))
-    //       .pipe(uglify())
-    //       .pipe(gulp.dest('public/js'))
-    //   } catch (e) { console.error(e.message) }
-    // })
   } catch (e) { console.error(e.message) }
 })
 

@@ -41,3 +41,5 @@ export class QueryBuilder {
     return '?' + this.params.map(i => i.key + '=' + i.value).join('&')
   }
 }
+
+export const globalQuery = QueryBuilder.create()

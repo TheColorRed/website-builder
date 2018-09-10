@@ -1,9 +1,10 @@
 import { loadPage } from '../templates/helper';
 
 import { makeDirectoryListing, makeFileListing, makeFilter, makeBreadCrumbs } from '../templates/admin/media'
-import { $ } from '../elemental/Elemental';
-import { Element } from '../elemental/Element';
-import { QueryBuilder } from '../../util/queryBuilder';
+import { QueryBuilder, globalQuery } from '../../util/queryBuilder';
+import { routes } from '../../util/routes';
+import { Element } from '../../util/elemental/Element';
+import { $ } from '../../util/elemental/Elemental';
 
 export interface DirectoryItem {
   directory: string
@@ -36,23 +37,21 @@ export interface Listing {
   files: FileItem[]
 }
 
-let qb = queryBuilder as QueryBuilder
-
 export function load() {
-  !qb.get('path').match(/^\/media/) && qb.set('path', '/media')
+  !globalQuery.get('path').match(/^\/media/) && globalQuery.set('path', '/media')
   loadPage('media')
   makeFilter().render('#media-filters')
 }
 
 window.addEventListener('popstate', async e => {
   e.preventDefault()
-  openDirectory(qb.get('path'))
+  openDirectory(globalQuery.get('path'))
 })
 
 export async function openDirectory(path: string) {
   if (!path) return
   $('#media-listings').ajax(routes.get('api-admin-media-files'), { path }, 'get', (data: Listing) => {
-    qb.remove('file')
+    globalQuery.remove('file')
     updateState(path)
     return Element.join(
       makeBreadCrumbs(),
@@ -69,12 +68,12 @@ export function updateState(pathname?: string) {
   updatingState = true
   let types = getTypes()
   let query = getQuery()
-  let p = pathname ? pathname : qb.get('path') || ''
+  let p = pathname ? pathname : globalQuery.get('path') || ''
 
-  p.length > 0 && qb.set('path', p)
-  query.length > 0 && qb.set('query', query)
-  types.length > 0 && qb.set('types', types.join(','))
-  history.pushState({}, '', qb.toString())
+  p.length > 0 && globalQuery.set('path', p)
+  query.length > 0 && globalQuery.set('query', query)
+  types.length > 0 && globalQuery.set('types', types.join(','))
+  history.pushState({}, '', globalQuery.toString())
 
   updatingState = false
 }
